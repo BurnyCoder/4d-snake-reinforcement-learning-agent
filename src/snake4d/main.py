@@ -9,6 +9,7 @@ Local notes: phases are resolved lazily by import path so that e.g. ``play`` nev
 """
 
 import argparse
+import dataclasses
 import importlib
 from collections.abc import Callable
 
@@ -31,9 +32,13 @@ def resolve(spec: str) -> Callable[[Config], object]:
 
 
 def pipeline(cfg: Config) -> None:
-    """Run the full user journey after the one-off benchmark: train, evaluate, report."""
-    for name in ("train", "evaluate", "report"):
-        resolve(PHASES[name])(cfg)
+    """Train, then evaluate the model that was just trained (best checkpoint), then report."""
+    run_dir = resolve(PHASES["train"])(cfg)
+    best = run_dir / "best_model.zip"
+    model = best if best.exists() else run_dir / "final_model.zip"
+    cfg = dataclasses.replace(cfg, model_path=str(model))  # re-runs the Config guards
+    resolve(PHASES["evaluate"])(cfg)
+    resolve(PHASES["report"])(cfg)
 
 
 def main(argv: list[str] | None = None) -> None:

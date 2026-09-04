@@ -68,7 +68,7 @@ class SnakeVecEnv(VecEnv):
         infos = self.sim.infos()  # computed BEFORE resets: fill/is_success of the finished episode
         done_rows = np.flatnonzero(done)
         for i in done_rows:
-            infos[i]["terminal_observation"] = obs[i]
+            infos[i]["terminal_observation"] = obs[i].copy()  # a view would see the reset below
             infos[i]["TimeLimit.truncated"] = bool(truncated[i] and not terminated[i])
         if done_rows.size:
             self.sim.reset(done_rows)

@@ -47,8 +47,11 @@ def versions() -> dict[str, str]:
             info[name] = version(name)  # https://docs.python.org/3/library/importlib.metadata.html
         except PackageNotFoundError:
             info[name] = "missing"
-    git = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True)
-    info["git_commit"] = git.stdout.strip() if git.returncode == 0 else "unknown"
+    try:
+        git = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True)
+        info["git_commit"] = git.stdout.strip() if git.returncode == 0 else "unknown"
+    except OSError:  # git not installed / not on PATH must not stop a run
+        info["git_commit"] = "unknown"
     try:
         import torch  # imported lazily so phases without torch (play) stay light
 
@@ -62,8 +65,14 @@ def versions() -> dict[str, str]:
 
 def make_run_dir(cfg: Config, phase: str) -> Path:
     """Create ``runs/<timestamp>_<phase>_<run_name>`` and persist config + versions inside it."""
-    run_dir = Path(cfg.runs_dir) / f"{datetime.now():%Y%m%d-%H%M%S}_{phase}_{cfg.run_name}"
-    run_dir.mkdir(parents=True, exist_ok=True)
+    stem = Path(cfg.runs_dir) / f"{datetime.now():%Y%m%d-%H%M%S}_{phase}_{cfg.run_name}"
+    run_dir = stem
+    for suffix in range(1, 100):  # two runs in the same second must not share a directory
+        try:
+            run_dir.mkdir(parents=True, exist_ok=False)
+            break
+        except FileExistsError:
+            run_dir = stem.with_name(f"{stem.name}-{suffix}")
     cfg.to_json(run_dir / "config.json")
     (run_dir / "versions.json").write_text(json.dumps(versions(), indent=2), encoding="utf-8")
     return run_dir

@@ -31,11 +31,12 @@ def test_route_policy_completes_2x4_under_the_full_protocol():
     assert mode["win_within"]["C2/2"] == 1.0
 
 
-def test_random_policy_rarely_completes_but_reports_fill():
-    cfg = Config(size=3, ndim=2, eval_episodes=10)
-    summary, _ = evaluate(RandomMaskedPolicy(cfg), cfg, seeds=(0,))
+def test_random_policy_never_completes_27_cells_but_reports_fill():
+    cfg = Config(size=3, ndim=3, eval_episodes=10)
+    summary, records = evaluate(RandomMaskedPolicy(cfg), cfg, seeds=(0,))
     mode = summary["modes"]["deterministic=True"]
-    assert 0.0 <= mode["fill_mean"] <= 1.0 and mode["episodes"] == 10
+    assert mode["success_rate_mean"] == 0.0 and 0.0 < mode["fill_mean"] < 1.0
+    assert mode["steps_to_complete_mean"] is None and len(records) == 10
 
 
 def test_summarize_handles_no_wins():

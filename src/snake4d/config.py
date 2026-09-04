@@ -145,13 +145,18 @@ class Config:
         ``overrides`` are ``field=value`` strings (from ``--set``); they are written into
         ``os.environ`` so a single casting path (below) handles every source.
         """
-        load_dotenv()  # base .env from the working directory; shell variables keep priority
+        # Only the project's own .env: the zero-argument load_dotenv() walks up parent directories
+        # and would load an unrelated .env from outside the repository.
+        load_dotenv(Path.cwd() / ".env")  # a missing file is a no-op; shell variables keep priority
         if env_file:
             _check(Path(env_file).is_file(), f"env file not found: {env_file}")
             load_dotenv(env_file, override=True)  # experiment file layers on top of .env
+        names = {f.name for f in fields(cls)}
         for item in overrides:
             key, _, value = item.partition("=")
-            os.environ[ENV_PREFIX + key.strip().upper().removeprefix(ENV_PREFIX)] = value.strip()
+            name = key.strip().lower().removeprefix(ENV_PREFIX.lower())
+            _check(name in names, f"unknown config field: {key} (known: {sorted(names)})")
+            os.environ[ENV_PREFIX + name.upper()] = value.strip()
         # Exact-type casting: f.type is int/float/str, see module docstring.
         values = {
             f.name: f.type(os.environ[ENV_PREFIX + f.name.upper()])
