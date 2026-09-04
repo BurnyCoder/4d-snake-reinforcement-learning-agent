@@ -1,0 +1,253 @@
+{
+  "machine": {
+    "cpu_threads": 8,
+    "gpu": "NVIDIA GeForce RTX 5070 Laptop GPU",
+    "torch": "2.14.0+cu130"
+  },
+  "env_only": {
+    "256": 177858.36985390002,
+    "1024": 125988.76263901172,
+    "4096": 114393.80270460504
+  },
+  "results": [
+    {
+      "env": "batched",
+      "n_envs": 256,
+      "device": "cpu",
+      "threads": 1,
+      "n_steps": 64,
+      "batch_size": 2048,
+      "timesteps": 212992,
+      "seconds": 137.49,
+      "fps": 1549
+    },
+    {
+      "env": "batched",
+      "n_envs": 256,
+      "device": "cpu",
+      "threads": 8,
+      "n_steps": 64,
+      "batch_size": 2048,
+      "timesteps": 212992,
+      "seconds": 39.31,
+      "fps": 5418
+    },
+    {
+      "env": "batched",
+      "n_envs": 256,
+      "device": "cuda",
+      "threads": 1,
+      "n_steps": 64,
+      "batch_size": 2048,
+      "timesteps": 212992,
+      "seconds": 17.54,
+      "fps": 12140
+    },
+    {
+      "env": "batched",
+      "n_envs": 256,
+      "device": "cuda",
+      "threads": 8,
+      "n_steps": 64,
+      "batch_size": 2048,
+      "timesteps": 212992,
+      "seconds": 15.97,
+      "fps": 13333
+    },
+    {
+      "env": "batched",
+      "n_envs": 1024,
+      "device": "cpu",
+      "threads": 1,
+      "n_steps": 64,
+      "batch_size": 2048,
+      "timesteps": 262144,
+      "seconds": 171.48,
+      "fps": 1529
+    },
+    {
+      "env": "batched",
+      "n_envs": 1024,
+      "device": "cpu",
+      "threads": 8,
+      "n_steps": 64,
+      "batch_size": 2048,
+      "timesteps": 262144,
+      "seconds": 46.59,
+      "fps": 5627
+    },
+    {
+      "env": "batched",
+      "n_envs": 1024,
+      "device": "cuda",
+      "threads": 1,
+      "n_steps": 64,
+      "batch_size": 2048,
+      "timesteps": 262144,
+      "seconds": 14.96,
+      "fps": 17526
+    },
+    {
+      "env": "batched",
+      "n_envs": 1024,
+      "device": "cuda",
+      "threads": 8,
+      "n_steps": 64,
+      "batch_size": 2048,
+      "timesteps": 262144,
+      "seconds": 13.53,
+      "fps": 19371
+    },
+    {
+      "env": "batched",
+      "n_envs": 4096,
+      "device": "cpu",
+      "threads": 1,
+      "n_steps": 64,
+      "batch_size": 2048,
+      "timesteps": 262144,
+      "seconds": 162.2,
+      "fps": 1616
+    },
+    {
+      "env": "batched",
+      "n_envs": 4096,
+      "device": "cpu",
+      "threads": 8,
+      "n_steps": 64,
+      "batch_size": 2048,
+      "timesteps": 262144,
+      "seconds": 44.4,
+      "fps": 5904
+    },
+    {
+      "env": "batched",
+      "n_envs": 4096,
+      "device": "cuda",
+      "threads": 1,
+      "n_steps": 64,
+      "batch_size": 2048,
+      "timesteps": 262144,
+      "seconds": 12.61,
+      "fps": 20782
+    },
+    {
+      "env": "batched",
+      "n_envs": 4096,
+      "device": "cuda",
+      "threads": 8,
+      "n_steps": 64,
+      "batch_size": 2048,
+      "timesteps": 262144,
+      "seconds": 12.61,
+      "fps": 20787
+    },
+    {
+      "env": "dummy",
+      "n_envs": 16,
+      "device": "cpu",
+      "threads": 1,
+      "n_steps": 512,
+      "batch_size": 2048,
+      "timesteps": 204800,
+      "seconds": 195.22,
+      "fps": 1049
+    },
+    {
+      "env": "dummy",
+      "n_envs": 16,
+      "device": "cpu",
+      "threads": 8,
+      "n_steps": 512,
+      "batch_size": 2048,
+      "timesteps": 204800,
+      "seconds": 103.56,
+      "fps": 1978
+    },
+    {
+      "env": "dummy",
+      "n_envs": 16,
+      "device": "cuda",
+      "threads": 1,
+      "n_steps": 512,
+      "batch_size": 2048,
+      "timesteps": 204800,
+      "seconds": 119.8,
+      "fps": 1710
+    },
+    {
+      "env": "dummy",
+      "n_envs": 16,
+      "device": "cuda",
+      "threads": 8,
+      "n_steps": 512,
+      "batch_size": 2048,
+      "timesteps": 204800,
+      "seconds": 118.75,
+      "fps": 1725
+    },
+    {
+      "env": "subproc",
+      "n_envs": 16,
+      "device": "cpu",
+      "threads": 1,
+      "n_steps": 512,
+      "batch_size": 2048,
+      "timesteps": 204800,
+      "seconds": 187.76,
+      "fps": 1091
+    },
+    {
+      "env": "subproc",
+      "n_envs": 16,
+      "device": "cpu",
+      "threads": 8,
+      "n_steps": 512,
+      "batch_size": 2048,
+      "timesteps": 204800,
+      "seconds": 92.12,
+      "fps": 2223
+    },
+    {
+      "env": "subproc",
+      "n_envs": 16,
+      "device": "cuda",
+      "threads": 1,
+      "n_steps": 512,
+      "batch_size": 2048,
+      "timesteps": 204800,
+      "seconds": 98.3,
+      "fps": 2084
+    },
+    {
+      "env": "subproc",
+      "n_envs": 16,
+      "device": "cuda",
+      "threads": 8,
+      "n_steps": 512,
+      "batch_size": 2048,
+      "timesteps": 204800,
+      "seconds": 98.8,
+      "fps": 2073
+    }
+  ],
+  "recommended": {
+    "SNAKE_N_ENVS": 4096,
+    "SNAKE_DEVICE": "cuda",
+    "SNAKE_TORCH_THREADS": 8,
+    "SNAKE_N_STEPS": 64,
+    "SNAKE_EVAL_EVERY": 12582912,
+    "SNAKE_CKPT_EVERY": 50331648,
+    "best_row": {
+      "env": "batched",
+      "n_envs": 4096,
+      "device": "cuda",
+      "threads": 8,
+      "n_steps": 64,
+      "batch_size": 2048,
+      "timesteps": 262144,
+      "seconds": 12.61,
+      "fps": 20787
+    }
+  }
+}

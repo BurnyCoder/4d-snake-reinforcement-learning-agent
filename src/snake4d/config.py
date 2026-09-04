@@ -50,10 +50,10 @@ class Config:
     r_step: float = -0.001
     shaping_coef: float = 0.0   # potential-based shaping weight (Ng et al. 1999); 0 = off
     # --- PPO --------------------------------------------------------------------------------
-    n_envs: int = 1024
+    n_envs: int = 4096          # docs/benchmark.md: batched env on CUDA peaks at 4096
     total_timesteps: int = 20_000_000
-    n_steps: int = 64
-    batch_size: int = 2048
+    n_steps: int = 64           # rollout = 64 * 4096 = 262,144 samples
+    batch_size: int = 8192      # docs/benchmark.md: 2048 -> 8192 raises fps 21k -> 34k
     n_epochs: int = 4
     gamma: float = 0.99
     gae_lambda: float = 0.95
@@ -66,8 +66,8 @@ class Config:
     max_grad_norm: float = 0.5
     target_kl: float = 0.03
     net_width: int = 512
-    device: str = "auto"
-    torch_threads: int = 1
+    device: str = "auto"        # cuda when available (measured 6x faster than cpu)
+    torch_threads: int = 8      # docs/benchmark.md: 8 threads beat 1 on every CPU row
     seed: int = 0
     # --- curriculum -------------------------------------------------------------------------
     curriculum: int = 1
@@ -78,8 +78,8 @@ class Config:
     p_true_start: float = 0.2
     # --- evaluation -------------------------------------------------------------------------
     eval_episodes: int = 100
-    eval_every: int = 500_000
-    ckpt_every: int = 2_000_000
+    eval_every: int = 2_097_152  # 8 rollouts of 262,144 (about a minute at 34k fps)
+    ckpt_every: int = 8_388_608  # 32 rollouts
     eval_seeds: str = "0,1,2"
     bench_steps: int = 200_000   # PPO timesteps per benchmark row
     # --- paths / phase arguments ------------------------------------------------------------
