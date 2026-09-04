@@ -26,7 +26,8 @@ steps per game?
   spread uniformly over every snake length via curriculum-style resets along the cycle
   (`p_true_start = 0.2`), expert = `RoutePolicy` (Hamiltonian cycle follower).
 - Cloning: negative log-likelihood of the expert action under the masked policy distribution,
-  Adam lr 1e-3, minibatch 8192, 20 epochs; the value head is untouched. Wall time about 20 s.
+  Adam lr 1e-3, minibatch 8192, 20 epochs; the value head is untouched. Wall time 9 s for the 20 epochs (12 s including data
+  collection; `run.log`).
 - Evaluation: docs/evaluation.md protocol, 100 episodes x 3 seeds, deterministic and stochastic.
 
 ## Results
@@ -40,22 +41,25 @@ steps per game?
 
 Expert-action accuracy after cloning: 1.000 (loss 2e-4 after 20 epochs).
 
-### PPO fine-tuning (exp05b): 20M steps, 23 min, from `bc_model.zip`
+### PPO fine-tuning (exp05b): 20M steps, 22.5 min, from `bc_model.zip`
 
 | metric | value |
 |---|---|
 | in-training evaluations (100 true-start episodes every 2.1M steps) | success 1.00 at every one of the 9 evaluations |
-| mean episode length at those evaluations | 16,331 - 16,514 steps (unchanged) |
-| `train/approx_kl` | 0.000 at every update |
+| mean episode length at those evaluations | 16,218 - 16,514 steps (unchanged; `evaluations.npz`) |
+| `train/approx_kl` | 7.9e-7 to 1.7e-5 at every update (prints as 0.000; `progress.csv`) |
 | throughput | 15k fps (half of exp04: every rollout ends no episode, and each evaluation is 100 x 16k steps) |
 
 H3 is **rejected in an instructive way**: the completion rate stayed at 100 %, but the policy did
-not change at all. Behaviour cloning drove the expert action's probability to ~0.9998, so every
+not change at all. Behaviour cloning drove the expert action's probability to about 0.9998 (exp(-2e-4) from the
+final cloning loss; not measured directly), so every
 sampled action equals the argmax, the advantage estimates carry no information about alternative
 moves, and with `ent_coef = 0` there is no force widening the distribution: PPO's update is
-identically zero (KL 0.000). Fine-tuning a near-deterministic clone needs exploration on purpose -
-an entropy bonus or a temperature on the cloned logits, or a less over-fitted clone (early
-stopping / label smoothing) - which is the next experiment.
+negligible (approx_kl below 2e-5). Fine-tuning a near-deterministic clone needs exploration on
+purpose - an entropy bonus or a temperature on the cloned logits, or a less over-fitted clone
+(early stopping, label smoothing: Muller, Kornblith and Hinton 2019,
+https://arxiv.org/abs/1906.02629; or DAgger-style data aggregation: Ross, Gordon and Bagnell
+2011, https://arxiv.org/abs/1011.0686) - which is the next experiment.
 
 ## Analysis and learnings
 
@@ -72,7 +76,7 @@ stopping / label smoothing) - which is the next experiment.
   *all* fill levels at once (uniform-length starts) with a dense supervised signal, so there is no
   frontier to advance and no distribution shift between "curriculum starts" and "true starts" -
   the true-start trajectory of the cycle follower is itself made of those states.
-- Cost: 20 seconds of cloning versus 54 minutes of PPO in exp04; the expert is free because the
+- Cost: about ten seconds of cloning versus 54 minutes of PPO in exp04; the expert is free because the
   route follower runs inside the batched env.
 
 ## Decisions

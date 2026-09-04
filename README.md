@@ -12,8 +12,9 @@ human, the training pipeline is fully scripted, and every experiment is written 
   (+1 if `a` is even, else -1). The state is a *body-age grid* (tail = 1 ... head = length): moving
   the tail is one decrement, collisions are one lookup, and all `N` training boards are stepped
   together with vectorised numpy. Eating grows the snake by one; the board is complete when
-  `length == size**ndim`. Starvation (`4 * cells` steps without food) and an absolute cap
-  (`cells^2` steps) are truncations, never deaths. Rules: [docs/game_rules.md](docs/game_rules.md).
+  `length == size**ndim`. Starvation (more than `4 * cells` consecutive steps without food) and
+  an absolute cap (`cells^2` steps) truncate the episode: the ordinary step cost, never the
+  death penalty. Rules: [docs/game_rules.md](docs/game_rules.md).
 - **Agent.** sb3-contrib `MaskablePPO` with an MLP `[512, 512]` on a flat observation of
   `4 * cells + 2` floats (body, time-to-vacate, head, food, length, hunger). The environment
   supplies a legal-action mask (walls, occupied cells, the neck), so the agent only chooses
@@ -24,8 +25,9 @@ human, the training pipeline is fully scripted, and every experiment is written 
   the demonstration for a **Backplay** reverse curriculum: episodes start as long route segments
   near a full board and the start moves backwards as the success rate allows. Evaluation always
   starts from length 1.
-- **Evaluation.** 100 episodes x 3 seeds, deterministic and stochastic passes, masked
-  `evaluate_policy`; headline metrics are the completion rate, mean fill and steps to complete,
+- **Evaluation.** 100 episodes x 3 seeds through masked `evaluate_policy` (trained models:
+  deterministic and stochastic passes; scripted baselines: one deterministic pass); headline
+  metrics are the completion rate, mean fill and steps to complete,
   compared with the route follower (ceiling) and masked random play (floor):
   [docs/evaluation.md](docs/evaluation.md).
 - **Science loop.** Each experiment is pre-registered as an `.env` override file in
@@ -37,14 +39,15 @@ human, the training pipeline is fully scripted, and every experiment is written 
 ## Install
 
 Requirements: Windows/Linux, [uv](https://docs.astral.sh/uv/) 0.12+, an NVIDIA GPU is optional
-(CPU works, about 6x slower). Python 3.13 is installed by uv automatically.
+(CPU works; [docs/benchmark.md](docs/benchmark.md) measured the same batched setup about 3.4x
+slower on 8 CPU threads than on the GPU). Python 3.13 is installed by uv automatically.
 
 ```bash
 git clone https://github.com/BurnyCoder/4d-snake-rl.git
 cd 4d-snake-rl
 uv sync --all-groups          # creates .venv with torch 2.14 (CUDA 13.0 wheels), SB3 2.9, gymnasium 1.3, ...
 cp .env.example .env          # optional: edit any SNAKE_* key (all keys are documented there)
-uv run pytest -m "not slow and not gpu"   # ~95 tests, about a minute; run -m gpu for the CUDA smoke test
+uv run pytest -m "not slow and not gpu"   # fast suite, about a minute; run -m gpu for the CUDA smoke test
 ```
 
 Every setting is a `SNAKE_<FIELD>` key of [src/snake4d/config.py](src/snake4d/config.py):
@@ -89,7 +92,7 @@ uv run tensorboard --logdir runs                 # optional live curves
 ```mermaid
 flowchart LR
     subgraph cli [CLI]
-        main[main.py: phases bench / play / train / evaluate / report / pipeline]
+        main[main.py: phases bench / play / train / imitate / evaluate / report / pipeline]
         config[config.py: Config from defaults, .env, --env-file, --set]
     end
     subgraph core [Game core]
@@ -142,19 +145,21 @@ The cross-experiment table is generated in [reports/all_experiments.md](reports/
 each experiment's write-up is under [reports/experiments/](reports/experiments/); the paper is
 [reports/paper.md](reports/paper.md) / [reports/paper.pdf](reports/paper.pdf).
 
-| board | route follower (exp01) | random legal play (exp01) | best learned agent | write-up |
+| board | route follower ([exp01](reports/data/exp01_route_4x4/summary.json)) | random legal play ([exp01](reports/data/exp01_random_4x4/summary.json)) | best learned agent | write-up, data |
 |---|---|---|---|---|
-| 2^4 (16 cells) | 100 %, 66 steps | 29 % | **96.3 %** completion, 44 steps (MaskablePPO + strict-gate Backplay, 5M steps) | [exp02](reports/experiments/exp02_ppo_2x4.md) |
-| 3^4 (81 cells, odd) | 100 %, 1,875 steps | 0 % (fill 0.23) | 0 % completion, fill 0.55 (30M steps, with or without curriculum) | [exp03](reports/experiments/exp03_ppo_3x4.md) |
-| 4^4 (256 cells) | 100 %, 16,448 steps | 0 % (fill 0.08) | PPO + curriculum from scratch: 0 %, fill 0.40 (100M steps). **Behaviour-cloned network: 100 % completion** (deterministic, 3 x 100 episodes), 16,448 steps; PPO fine-tuning kept 100 % but changed nothing (zero-entropy clone, KL 0) | [exp04](reports/experiments/exp04_ppo_4x4.md), [exp05](reports/experiments/exp05_bc_4x4.md) |
+| 2^4 (16 cells) | 100 %, 66 steps | 29 % | **96.3 %** completion, 43.5 steps (MaskablePPO + strict-gate Backplay, 5M steps) | [exp02](reports/experiments/exp02_ppo_2x4.md), [data](reports/data/exp02d_ppo_2x4_backplay_strict_best/summary.json) |
+| 3^4 (81 cells, odd) | 100 %, 1,875 steps | 0 % (fill 0.23) | 0 % completion, fill 0.54-0.57 (30M steps, with or without curriculum) | [exp03](reports/experiments/exp03_ppo_3x4.md), [data](reports/data/exp03a_ppo_3x4_nocur_best/summary.json) |
+| 4^4 (256 cells) | 100 %, 16,448 steps | 0 % (fill 0.08) | PPO + curriculum from scratch: 0 %, fill 0.40 (100M steps). **Behaviour-cloned network: 100 % completion** (deterministic, 3 x 100 episodes), 16,448 steps; PPO fine-tuning kept 100 % but left the policy unchanged (near-deterministic clone, approx_kl below 2e-5) | [exp04](reports/experiments/exp04_ppo_4x4.md), [exp05](reports/experiments/exp05_bc_4x4.md), [data](reports/data/exp05_bc_4x4_eval/summary.json) |
 
 Model-free PPO with a reverse curriculum completes the smallest 4D board but not the 81- or
 256-cell boards ([exp04](reports/experiments/exp04_ppo_4x4.md) analyses why: schedules tied to
 the step budget instead of curriculum progress, no transfer from cycle-shaped starts). Cloning
-the same network on the scripted Hamiltonian follower's decisions (`snake4d imitate`, 20 seconds)
+the same network on the scripted Hamiltonian follower's decisions (`snake4d imitate`, about ten
+seconds)
 yields a neural policy that completes the full 4^4 board every time; PPO then only has to make it
-faster. Throughput on this laptop: 34k PPO steps/s (4096 batched envs on CUDA), see
-[exp00](reports/experiments/exp00_benchmark.md).
+faster. Throughput on this laptop: 33k PPO steps/s (4096 batched envs on CUDA,
+minibatch 16384), see [exp00](reports/experiments/exp00_benchmark.md) and
+[benchmark.json](reports/data/exp00_benchmark/benchmark.json).
 
 ## Repository layout
 

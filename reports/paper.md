@@ -7,22 +7,22 @@ artifacts copied to `reports/data/` and the per-experiment write-ups in `reports
 
 We build an N-dimensional snake game (default 4D, 4^4 = 256 cells, 8 moves) whose rules are
 implemented once as vectorised numpy over a body-age grid, so thousands of boards step together in
-a single process (114k-178k environment steps per second, 34k PPO steps per second end to end on a
+a single process (126k-235k environment steps per second, 33k PPO steps per second end to end on a
 laptop GPU). We train sb3-contrib MaskablePPO agents to *complete* the game - fill every cell -
 with a legal-action mask from the environment, a sparse reward (+1 food, -1 death, +10 win, -0.001
 per step) and a Backplay-style reverse curriculum whose demonstration is a Hamiltonian route
 (a cycle for even sizes; for odd sizes a cycle over all cells but one corner with a guarded
 detour). Scripted route following completes 2^4, 3^4 and 4^4 in 100 % of episodes and defines
-the step-count ceiling (66 / 1,874 / 16,448 steps). On 2^4 plain PPO plateaus at 0.88-0.93
+the step-count ceiling (66 / 1,875 / 16,448 steps). On 2^4 plain PPO plateaus at 0.88-0.93
 completion; a strictly gated curriculum (advance only at 90 % success) reaches 0.963 at the same
-5M-step budget while completing in 44 steps, a third fewer than the route follower's 66. On the
+5M-step budget while completing in 43.5 steps, a third fewer than the route follower's 65.9. On the
 larger boards the result is negative within our budgets: on 3^4 (odd parity) every arm plateaus at
-54 % fill with no completions, and on 4^4 a 100M-step curriculum run moves the start frontier
+54-57 % fill with no completions, and on 4^4 a 100M-step curriculum run moves the start frontier
 from 255 to 199 cells and then collapses, reaching 40 % fill from the true start (best episode
 66 %) and zero completions. We attribute the collapse to schedules tied to the total budget rather
 than to curriculum progress, and to the lack of transfer from cycle-shaped starts to true starts.
 Behaviour-cloning the same network on 262k route-follower decisions spread over all fill levels
-(20 seconds of supervised training) yields a neural policy that completes the full 4^4 board in
+(about ten seconds of supervised training) yields a neural policy that completes the full 4^4 board in
 100 % of deterministic evaluation episodes (3 seeds x 100), at the follower's 16,448 steps; PPO
 fine-tuning of this clone is the route to a faster learned completer.
 
@@ -30,8 +30,8 @@ fine-tuning of this clone is the route to a faster learned completer.
 
 Snake is a coverage problem in disguise: to win, the body must at the end form a Hamiltonian path
 of the grid, and every intermediate state must keep such a path reachable. In four dimensions the
-grid graph has degree 8, the intuition of "corners" disappears, and humans cannot play the board
-(eugeneko/Snake4D). This project asks whether a model-free policy can learn to complete the 4D
+grid graph has degree 8, the intuition of "corners" disappears, and a projected 4D board stops
+being playable by a human beyond a certain snake length (eugeneko/Snake4D's own README). This project asks whether a model-free policy can learn to complete the 4D
 board, and builds the full pipeline needed to answer it: game, human play, scripted baselines,
 batched training, evaluation protocol and reports.
 
@@ -46,10 +46,16 @@ batched training, evaluation protocol and reports.
   moves the start backwards; Salimans and Chen (2018) gate the move on the success rate. Our
   demonstration is a Hamiltonian route rather than a human trajectory.
 - **Hamiltonian-cycle agents.** twanvl/snake benchmarks cycle followers and perturbed cycles
-  (0 % losses); Ruskey and Sawada (2003) prove Hamiltonian cycles exist in d-dimensional grids
-  with an even side.
-- **AlphaSnake** (Du et al. 2022) is the only published learned agent with a >50 % win rate on a
-  10x10 board, using MCTS; it frames snake as a Hamiltonian-cycle problem exactly as we do.
+  (0 % losses); the perturbed-cycle rule that the head must never overtake the tail is from
+  johnflux's Nokia-snake write-up (2015). Every rectangular grid graph with an even number of
+  cells has a Hamiltonian cycle (Itai, Papadimitriou and Szwarcfiter 1982); `hamilton.ham_cycle`
+  lifts a 2D cycle to d dimensions and verifies the result, and the odd-board cycle over all
+  cells but a corner is our own construction, also verified.
+- **Imitation.** Behaviour cloning (Pomerleau 1988) learns the expert's action from the
+  observation; its covariate-shift failure mode and the DAgger remedy are due to Ross, Gordon
+  and Bagnell (2011).
+- **AlphaSnake** (Du et al. 2022) is, by its authors' account, the first published learned agent
+  with a >50 % win rate on a 10x10 board, using MCTS; it frames snake as a Hamiltonian-cycle problem exactly as we do.
 - **Shaping.** Ng, Harada and Russell (1999): potential-based shaping is the only shaping that
   cannot change the optimal policy; we keep it available but off.
 
@@ -58,8 +64,9 @@ batched training, evaluation protocol and reports.
 State: a body-age grid `age[cell]` (0 empty, 1 tail, `length` head), head and food indices. A step
 resolves the target cell, decrements every age unless the snake eats (so the tail vacates first
 and following the tail is legal), tests occupancy, writes the head, checks `length == C` before
-spawning food uniformly over free cells. Starvation (`4C` idle steps) and an absolute cap (`C^2`
-steps) truncate without penalty. Observation: `4C + 2` floats (body, time-to-vacate `age/length`,
+spawning food uniformly over free cells. Starvation (more than `4C` consecutive idle steps) and an absolute cap
+(`C^2` steps) truncate the episode; the truncating step is paid `r_step` like any other and
+there is no death penalty. Observation: `4C + 2` floats (body, time-to-vacate `age/length`,
 head one-hot, food one-hot, `length/C`, hunger). Mask: inside the board, free after the tail
 moves, not the neck; an all-false row falls back to in-bounds moves because MaskablePPO masks with
 `-1e8`, not `-inf`. Rendering folds the 4D board into a z-by-w grid of x-by-y tiles.
@@ -78,7 +85,7 @@ Defaults were chosen by the throughput benchmark (exp00) and the reference agent
 **Batched environment.** One `SnakeBatch` holds all boards; a custom SB3 `VecEnv` exposes it and
 `VecMonitor` records episodes. The benchmark measured 10x higher PPO throughput than
 `DummyVecEnv`/`SubprocVecEnv` over single environments and showed the PPO update, not the
-environment, to be the bottleneck (minibatch 2048 -> 8192 lifts throughput 21k -> 34k fps).
+environment, to be the bottleneck (minibatch 2048 -> 8192 lifts throughput 19k -> 31k fps on the best row; `reports/data/exp00_benchmark/benchmark.json`).
 
 **Curriculum.** 80 % of resets place the snake as a segment of length `U[hi - 4, hi]` along a
 random rotation of the Hamiltonian route, starting at `hi = C - 1`; the frontier moves back by
@@ -96,29 +103,33 @@ metrics: completion rate, mean fill, steps to complete, win-within-K.
 Pre-registered arms live in `experiments/*.env`; every write-up follows question -> hypothesis ->
 setup -> results -> learnings:
 
-- exp00 - throughput benchmark: batched env on CUDA, 4096 envs, batch 8192 (34k fps).
-- exp01 - scripted baselines: route follower 100 % on 2^4 / 3^4 / 4^4 (65.9 / 1,874 / 16,448
-  steps); random legal play 29 % / 0 % / 0 %. The first odd-board follower (an open Gray-code
-  path) reached 4 % fill and was replaced by the cycle-minus-corner construction.
+- exp00 - throughput benchmark: batched env on CUDA, 4096 envs; minibatch 8192 gives 31k fps
+  (33k at 16384; 8192 adopted for more gradient steps per rollout).
+- exp01 - scripted baselines: route follower 100 % on 2^4 / 3^4 / 4^4 (65.9 / 1,874.5 /
+  16,447.8 steps); random legal play 29 % / 0 % / 0 % (`reports/data/exp01_*/summary.json`).
+  The first odd-board follower (an open Gray-code path) reached about 4 % fill (run not
+  archived, see exp01) and was replaced by the cycle-minus-corner construction.
 - exp02 - 2^4: plain PPO 0.877 (5M) and 0.933 (20M) deterministic completion; loosely gated
-  Backplay (rho 0.2) 0.850; strictly gated Backplay (rho 0.9, window 4) 0.963 at 5M with 44
-  steps per completion. Failures are collisions with one cell left. The strict gate became the
-  default.
+  Backplay (rho 0.2) 0.850; strictly gated Backplay (rho 0.9, window 4) 0.963 at 5M with 43.5
+  steps per completion (`reports/data/exp02*_best/summary.json`). Failures are collisions with
+  one cell left. The strict gate became the default.
 - exp03 - 3^4 (81 cells, odd): plain PPO, strict Backplay (gate 0.9) and relaxed Backplay (gate
   0.8) at 30M steps each all end at 0.54-0.57 fill and 0 completions; the curriculum frontier never
   left the endgame (80 -> 76-78) because the corner detour was never mastered above the gate
   (`reports/experiments/exp03_ppo_3x4.md`).
 - exp04 - 4^4 (256 cells): Backplay (gate 0.8, window 16, step 8) for 100M steps / 54 min:
-  eight frontier advances to 199 in the first 28M steps, then the curriculum success rate fell to
-  0 as the learning rate, clip range and entropy decayed towards their end values; true-start fill
-  0.40 (best episode 0.66), completion 0.000 (`reports/experiments/exp04_ppo_4x4.md`).
+  seven frontier advances (255 -> 199) between 18.6M and 53.7M steps, none in the remaining
+  46M, and the curriculum success rate fell to 0 from about 75M steps as the learning rate,
+  clip range and entropy decayed towards their end values; true-start fill 0.40 (best episode
+  0.66), completion 0.000 (`reports/experiments/exp04_ppo_4x4.md`, `reports/data/exp04_ppo_4x4*/`).
 - exp05 - 4^4 imitation warm start: behaviour cloning of the route follower reaches 1.000
   expert-action accuracy and the cloned network completes the board in 1.000 +- 0.000 of
   deterministic episodes (0.787 +- 0.041 when sampling), 16,448 steps per game. exp05b fine-tuned
   it with PPO for 20M steps (lr 1e-4, clip 0.1, no entropy, no curriculum): completion stayed at
-  1.00 in all nine evaluations but the step count did not move and `approx_kl` was 0.000
-  throughout - a clone with ~0.9998 probability on the expert move gives PPO nothing to compare,
-  so fine-tuning needs deliberate exploration (`reports/experiments/exp05_bc_4x4.md`).
+  1.00 in all nine evaluations but the step count did not move and `approx_kl` stayed below
+  2e-5 throughout - a clone whose expert-move probability is about 0.9998 (from the final
+  cloning loss) gives PPO nothing to compare, so fine-tuning needs deliberate exploration
+  (`reports/experiments/exp05_bc_4x4.md`, `reports/data/exp05*`).
 
 The generated cross-run table is `reports/all_experiments.md`.
 
@@ -132,8 +143,9 @@ global-planning constraint that a one-hot MLP learns only partially from termina
 
 On 81 and 256 cells the same recipe fails, for two identifiable reasons. First, the curriculum's
 starting states - snakes laid along the Hamiltonian cycle - are not states the true-start policy
-ever reaches, so skill on curriculum starts (0.9 fill, 60-85 % endgame success) did not transfer
-to the true start (0.4-0.55 fill). Second, the learning-rate, clip-range and entropy schedules
+ever reaches (the distribution shift inherent to reverse curricula, Florensa et al. 2017), so
+skill on curriculum starts (0.88-0.9 fill, 60-85 % endgame success) did not transfer to the true
+start (0.4-0.55 fill). Second, the learning-rate, clip-range and entropy schedules
 decay with the total budget, not with curriculum progress, so the 4^4 agent lost the ability to
 adapt exactly when the frontier reached the hardest states and its endgame success fell to zero.
 The odd 3^4 board adds the parity constraint and a two-step corner detour that was never learned.
@@ -145,11 +157,11 @@ remains for RL is efficiency - the clone plays the 16,448-step cycle, while the 
 showed that PPO can cut a third of the steps by taking shortcuts - and robustness under sampling.
 Other candidates for the from-scratch setting are schedules driven by the frontier rather than
 the step count, longer budgets with smaller frontier steps, and decision-time search with the
-learned value function, as in AlphaSnake.
+learned value function (AlphaZero-style policy iteration, Silver et al. 2017), as in AlphaSnake.
 
 ## 7. Conclusion
 
-The repository delivers a playable 4D snake, a batched training stack that runs 34k PPO steps per
+The repository delivers a playable 4D snake, a batched training stack that runs 33k PPO steps per
 second on one laptop GPU, scripted proofs that every board size is completable (with a new
 cycle-minus-corner construction for odd sizes), a reproducible experiment loop, and two results:
 model-free MaskablePPO with a Hamiltonian reverse curriculum completes the 16-cell 4D board in
@@ -162,10 +174,19 @@ and PPO fine-tuning from that clone is the path to a faster learned completer.
 - Huang, S. and Ontanon, S. (2020). A Closer Look at Invalid Action Masking in Policy Gradient Algorithms. arXiv:2006.14171.
 - Resnick, C. et al. (2018). Backplay: "Man muss immer umkehren". arXiv:1807.06919.
 - Salimans, T. and Chen, R. (2018). Learning Montezuma's Revenge from a Single Demonstration. arXiv:1812.03381.
-- Ng, A., Harada, D. and Russell, S. (1999). Policy invariance under reward transformations. ICML.
-- Ruskey, F. and Sawada, J. (2003). Bent Hamilton Cycles in d-Dimensional Grid Graphs. Electron. J. Combin. 10(1).
+- Ng, A., Harada, D. and Russell, S. (1999). Policy Invariance Under Reward Transformations: Theory and Application to Reward Shaping. ICML, 278-287. https://dl.acm.org/doi/10.5555/645528.657613
+- Grzes, M. (2017). Reward Shaping in Episodic Reinforcement Learning. AAMAS. https://dl.acm.org/doi/10.5555/3091125.3091208
+- Itai, A., Papadimitriou, C. H. and Szwarcfiter, J. L. (1982). Hamilton Paths in Grid Graphs. SIAM J. Comput. 11(4), 676-686. https://doi.org/10.1137/0211056
 - Du, Y. et al. (2022). AlphaSnake: Policy Iteration on a Nondeterministic NP-hard Markov Decision Process. arXiv:2211.09622.
 - Andrychowicz, M. et al. (2020). What Matters in On-Policy Reinforcement Learning? arXiv:2006.05990.
-- Raffin, A. et al. (2021). Stable-Baselines3: Reliable Reinforcement Learning Implementations. JMLR.
+- Raffin, A. et al. (2021). Stable-Baselines3: Reliable Reinforcement Learning Implementations. JMLR 22(268), 1-8. https://jmlr.org/papers/v22/20-1364.html
 - Schulman, J. et al. (2017). Proximal Policy Optimization Algorithms. arXiv:1707.06347.
-- linyiLYi/snake-ai, twanvl/snake, PufferAI/PufferLib, Pella86/Snake4d (see THIRD_PARTY_NOTICES.md).
+- Towers, M. et al. (2024). Gymnasium: A Standard Interface for Reinforcement Learning Environments. arXiv:2407.17032.
+- Pomerleau, D. A. (1988). ALVINN: An Autonomous Land Vehicle in a Neural Network. NeurIPS. https://proceedings.neurips.cc/paper/1988/hash/812b4ba287f5ee0bc9d43bbf5bbe87fb-Abstract.html
+- Ross, S., Gordon, G. and Bagnell, D. (2011). A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning (DAgger). AISTATS. arXiv:1011.0686.
+- Muller, R., Kornblith, S. and Hinton, G. (2019). When Does Label Smoothing Help? NeurIPS. arXiv:1906.02629.
+- Florensa, C. et al. (2017). Reverse Curriculum Generation for Reinforcement Learning. CoRL. arXiv:1707.05300.
+- Silver, D. et al. (2017). Mastering Chess and Shogi by Self-Play with a General Reinforcement Learning Algorithm. arXiv:1712.01815.
+- Sutton, R. S. and Barto, A. G. (2018). Reinforcement Learning: An Introduction (2nd ed.). MIT Press. http://incompleteideas.net/book/the-book-2nd.html
+- johnflux (2015). Nokia 6110 Part 3 - Algorithms. https://johnflux.com/2015/05/02/nokia-6110-part-3-algorithms/
+- linyiLYi/snake-ai, twanvl/snake, instadeepai/jumanji, Pella86/Snake4d (see THIRD_PARTY_NOTICES.md).
