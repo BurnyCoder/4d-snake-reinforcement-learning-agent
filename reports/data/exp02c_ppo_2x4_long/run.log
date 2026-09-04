@@ -1,0 +1,2 @@
+2026-09-04 19:52:19,187 - snake4d - INFO - training 2^4 (16 cells) for 20,000,000 steps on cuda: n_envs=1024 n_steps=32 batch=4096 curriculum=0
+2026-09-04 20:00:54,369 - snake4d - INFO - saved runs\20260904-195216_train_exp02c_ppo_2x4_long\final_model.zip after 20,021,248 timesteps

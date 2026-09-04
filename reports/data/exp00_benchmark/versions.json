@@ -5,6 +5,6 @@
   "sb3-contrib": "2.9.0",
   "numpy": "2.5.2",
   "pygame-ce": "2.5.8",
-  "git_commit": "6a8790b6c599143776fca1c7eae3c318195068b4",
+  "git_commit": "05c779ef59ed3dfcef3277a6592e131c21b72eba",
   "cuda_device": "NVIDIA GeForce RTX 5070 Laptop GPU"
 }

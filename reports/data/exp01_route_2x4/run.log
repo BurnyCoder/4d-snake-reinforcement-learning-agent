@@ -1,0 +1,24 @@
+2026-09-04 19:28:18,506 - snake4d - INFO - evaluating route on 2^4 (16 cells), 100 episodes x seeds (0, 1, 2), modes (True,)
+2026-09-04 19:28:18,619 - snake4d.evaluation - INFO - deterministic=True/seed=0: success=1.000 fill=1.000 steps_to_complete=66.45
+2026-09-04 19:28:18,724 - snake4d.evaluation - INFO - deterministic=True/seed=1: success=1.000 fill=1.000 steps_to_complete=65.9
+2026-09-04 19:28:18,828 - snake4d.evaluation - INFO - deterministic=True/seed=2: success=1.000 fill=1.000 steps_to_complete=65.25
+2026-09-04 19:28:18,832 - snake4d - INFO - summary:
+{
+ "deterministic=True": {
+  "success_rate_mean": 1.0,
+  "success_rate_std": 0.0,
+  "episodes": 300,
+  "success_rate": 1.0,
+  "fill_mean": 1.0,
+  "return_mean": 24.935130106608074,
+  "length_mean": 65.86666666666666,
+  "steps_to_complete_mean": 65.86666666666666,
+  "win_within": {
+   "C": 0.0,
+   "2C": 0.0,
+   "4C": 0.4533333333333333,
+   "C2/2": 1.0
+  }
+ }
+}
+2026-09-04 19:28:18,832 - snake4d - INFO - results written to runs\20260904-192818_evaluate_exp01_route_2x4

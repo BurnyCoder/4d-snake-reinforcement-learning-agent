@@ -1,0 +1,43 @@
+2026-09-04 22:42:50,874 - snake4d - INFO - evaluating runs/20260904-221940_train_exp05b_ppo_4x4_from_bc//best_model.zip on 4^4 (256 cells), 100 episodes x seeds (0, 1, 2), modes (True, False)
+2026-09-04 22:44:11,226 - snake4d.evaluation - INFO - deterministic=True/seed=0: success=1.000 fill=1.000 steps_to_complete=16360.38
+2026-09-04 22:45:34,026 - snake4d.evaluation - INFO - deterministic=True/seed=1: success=1.000 fill=1.000 steps_to_complete=16393.56
+2026-09-04 22:46:56,988 - snake4d.evaluation - INFO - deterministic=True/seed=2: success=1.000 fill=1.000 steps_to_complete=16486.73
+2026-09-04 22:48:28,909 - snake4d.evaluation - INFO - deterministic=False/seed=0: success=0.780 fill=0.896 steps_to_complete=16544.53846153846
+2026-09-04 22:50:01,837 - snake4d.evaluation - INFO - deterministic=False/seed=1: success=0.740 fill=0.875 steps_to_complete=16780.324324324323
+2026-09-04 22:51:34,264 - snake4d.evaluation - INFO - deterministic=False/seed=2: success=0.770 fill=0.880 steps_to_complete=16606.636363636364
+2026-09-04 22:51:34,268 - snake4d - INFO - summary:
+{
+ "deterministic=True": {
+  "success_rate_mean": 1.0,
+  "success_rate_std": 0.0,
+  "episodes": 300,
+  "success_rate": 1.0,
+  "fill_mean": 1.0,
+  "return_mean": 248.56966557820638,
+  "length_mean": 16413.556666666667,
+  "steps_to_complete_mean": 16413.556666666667,
+  "win_within": {
+   "C": 0.0,
+   "2C": 0.0,
+   "4C": 0.0,
+   "C2/2": 1.0
+  }
+ },
+ "deterministic=False": {
+  "success_rate_mean": 0.7633333333333333,
+  "success_rate_std": 0.016996731711975962,
+  "episodes": 300,
+  "success_rate": 0.7633333333333333,
+  "fill_mean": 0.8835546875,
+  "return_mean": 217.0356097793579,
+  "length_mean": 15538.82,
+  "steps_to_complete_mean": 16641.61135371179,
+  "win_within": {
+   "C": 0.0,
+   "2C": 0.0,
+   "4C": 0.0,
+   "C2/2": 0.7633333333333333
+  }
+ }
+}
+2026-09-04 22:51:34,268 - snake4d - INFO - results written to runs\20260904-224248_evaluate_exp05b_ppo_4x4_from_bc_best

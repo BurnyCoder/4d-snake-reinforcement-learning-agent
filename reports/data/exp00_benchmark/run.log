@@ -1,0 +1,28 @@
+2026-09-05 01:04:10,944 - snake4d - INFO - env-only batched n_envs=256: 234823 steps/s
+2026-09-05 01:04:12,468 - snake4d - INFO - env-only batched n_envs=1024: 136074 steps/s
+2026-09-05 01:04:19,011 - snake4d - INFO - env-only batched n_envs=4096: 126304 steps/s
+2026-09-05 01:06:33,537 - snake4d - INFO - {"env": "batched", "n_envs": 256, "device": "cpu", "threads": 1, "n_steps": 64, "batch_size": 2048, "timesteps": 212992, "seconds": 132.32, "fps": 1610}
+2026-09-05 01:07:09,551 - snake4d - INFO - {"env": "batched", "n_envs": 256, "device": "cpu", "threads": 8, "n_steps": 64, "batch_size": 2048, "timesteps": 212992, "seconds": 35.94, "fps": 5926}
+2026-09-05 01:07:24,893 - snake4d - INFO - {"env": "batched", "n_envs": 256, "device": "cuda", "threads": 1, "n_steps": 64, "batch_size": 2048, "timesteps": 212992, "seconds": 15.21, "fps": 14006}
+2026-09-05 01:07:39,579 - snake4d - INFO - {"env": "batched", "n_envs": 256, "device": "cuda", "threads": 8, "n_steps": 64, "batch_size": 2048, "timesteps": 212992, "seconds": 14.61, "fps": 14577}
+2026-09-05 01:10:23,539 - snake4d - INFO - {"env": "batched", "n_envs": 1024, "device": "cpu", "threads": 1, "n_steps": 64, "batch_size": 2048, "timesteps": 262144, "seconds": 163.85, "fps": 1600}
+2026-09-05 01:11:08,998 - snake4d - INFO - {"env": "batched", "n_envs": 1024, "device": "cpu", "threads": 8, "n_steps": 64, "batch_size": 2048, "timesteps": 262144, "seconds": 45.39, "fps": 5776}
+2026-09-05 01:11:23,356 - snake4d - INFO - {"env": "batched", "n_envs": 1024, "device": "cuda", "threads": 1, "n_steps": 64, "batch_size": 2048, "timesteps": 262144, "seconds": 14.23, "fps": 18418}
+2026-09-05 01:11:37,340 - snake4d - INFO - {"env": "batched", "n_envs": 1024, "device": "cuda", "threads": 8, "n_steps": 64, "batch_size": 2048, "timesteps": 262144, "seconds": 13.91, "fps": 18843}
+2026-09-05 01:14:20,067 - snake4d - INFO - {"env": "batched", "n_envs": 4096, "device": "cpu", "threads": 1, "n_steps": 64, "batch_size": 2048, "timesteps": 262144, "seconds": 162.61, "fps": 1612}
+2026-09-05 01:15:04,184 - snake4d - INFO - {"env": "batched", "n_envs": 4096, "device": "cpu", "threads": 8, "n_steps": 64, "batch_size": 2048, "timesteps": 262144, "seconds": 44.03, "fps": 5954}
+2026-09-05 01:15:17,333 - snake4d - INFO - {"env": "batched", "n_envs": 4096, "device": "cuda", "threads": 1, "n_steps": 64, "batch_size": 2048, "timesteps": 262144, "seconds": 13.02, "fps": 20137}
+2026-09-05 01:15:30,253 - snake4d - INFO - {"env": "batched", "n_envs": 4096, "device": "cuda", "threads": 8, "n_steps": 64, "batch_size": 2048, "timesteps": 262144, "seconds": 12.83, "fps": 20433}
+2026-09-05 01:18:41,579 - snake4d - INFO - {"env": "dummy", "n_envs": 16, "device": "cpu", "threads": 1, "n_steps": 512, "batch_size": 2048, "timesteps": 204800, "seconds": 191.16, "fps": 1071}
+2026-09-05 01:20:23,796 - snake4d - INFO - {"env": "dummy", "n_envs": 16, "device": "cpu", "threads": 8, "n_steps": 512, "batch_size": 2048, "timesteps": 204800, "seconds": 102.11, "fps": 2006}
+2026-09-05 01:22:26,289 - snake4d - INFO - {"env": "dummy", "n_envs": 16, "device": "cuda", "threads": 1, "n_steps": 512, "batch_size": 2048, "timesteps": 204800, "seconds": 122.31, "fps": 1674}
+2026-09-05 01:24:29,425 - snake4d - INFO - {"env": "dummy", "n_envs": 16, "device": "cuda", "threads": 8, "n_steps": 512, "batch_size": 2048, "timesteps": 204800, "seconds": 122.98, "fps": 1665}
+2026-09-05 01:28:19,304 - snake4d - INFO - {"env": "subproc", "n_envs": 16, "device": "cpu", "threads": 1, "n_steps": 512, "batch_size": 2048, "timesteps": 204800, "seconds": 219.31, "fps": 934}
+2026-09-05 01:30:25,731 - snake4d - INFO - {"env": "subproc", "n_envs": 16, "device": "cpu", "threads": 8, "n_steps": 512, "batch_size": 2048, "timesteps": 204800, "seconds": 117.72, "fps": 1740}
+2026-09-05 01:32:22,867 - snake4d - INFO - {"env": "subproc", "n_envs": 16, "device": "cuda", "threads": 1, "n_steps": 512, "batch_size": 2048, "timesteps": 204800, "seconds": 108.87, "fps": 1881}
+2026-09-05 01:34:23,444 - snake4d - INFO - {"env": "subproc", "n_envs": 16, "device": "cuda", "threads": 8, "n_steps": 512, "batch_size": 2048, "timesteps": 204800, "seconds": 112.75, "fps": 1816}
+2026-09-05 01:34:23,445 - snake4d - INFO - recommended: {"SNAKE_N_ENVS": 4096, "SNAKE_DEVICE": "cuda", "SNAKE_TORCH_THREADS": 8, "SNAKE_N_STEPS": 64, "SNAKE_EVAL_EVERY": 12320768, "SNAKE_CKPT_EVERY": 49283072, "best_row": {"env": "batched", "n_envs": 4096, "device": "cuda", "threads": 8, "n_steps": 64, "batch_size": 2048, "timesteps": 262144, "seconds": 12.83, "fps": 20433}}
+2026-09-05 01:34:37,538 - snake4d.benchmark - INFO - {"env": "batched", "n_envs": 4096, "device": "cuda", "threads": 8, "n_steps": 64, "batch_size": 2048, "timesteps": 262144, "seconds": 13.99, "fps": 18735}
+2026-09-05 01:34:46,181 - snake4d.benchmark - INFO - {"env": "batched", "n_envs": 4096, "device": "cuda", "threads": 8, "n_steps": 64, "batch_size": 8192, "timesteps": 262144, "seconds": 8.54, "fps": 30686}
+2026-09-05 01:34:54,241 - snake4d.benchmark - INFO - {"env": "batched", "n_envs": 4096, "device": "cuda", "threads": 8, "n_steps": 64, "batch_size": 16384, "timesteps": 262144, "seconds": 7.95, "fps": 32967}
+2026-09-05 01:34:54,253 - snake4d - INFO - wrote docs\benchmark.md

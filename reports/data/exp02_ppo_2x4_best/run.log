@@ -1,0 +1,43 @@
+2026-09-04 20:42:52,912 - snake4d - INFO - evaluating runs/20260904-192913_train_exp02_ppo_2x4//best_model.zip on 2^4 (16 cells), 100 episodes x seeds (0, 1, 2), modes (True, False)
+2026-09-04 20:42:53,419 - snake4d.evaluation - INFO - deterministic=True/seed=0: success=0.930 fill=0.993 steps_to_complete=34.31182795698925
+2026-09-04 20:42:53,618 - snake4d.evaluation - INFO - deterministic=True/seed=1: success=0.830 fill=0.984 steps_to_complete=34.44578313253012
+2026-09-04 20:42:53,828 - snake4d.evaluation - INFO - deterministic=True/seed=2: success=0.870 fill=0.984 steps_to_complete=34.51724137931034
+2026-09-04 20:42:54,217 - snake4d.evaluation - INFO - deterministic=False/seed=0: success=0.840 fill=0.983 steps_to_complete=35.714285714285715
+2026-09-04 20:42:54,494 - snake4d.evaluation - INFO - deterministic=False/seed=1: success=0.900 fill=0.993 steps_to_complete=34.955555555555556
+2026-09-04 20:42:54,801 - snake4d.evaluation - INFO - deterministic=False/seed=2: success=0.820 fill=0.979 steps_to_complete=35.80487804878049
+2026-09-04 20:42:54,808 - snake4d - INFO - summary:
+{
+ "deterministic=True": {
+  "success_rate_mean": 0.8766666666666666,
+  "success_rate_std": 0.04109609335312654,
+  "episodes": 300,
+  "success_rate": 0.8766666666666667,
+  "fill_mean": 0.9872916666666667,
+  "return_mean": 23.406766401926678,
+  "length_mean": 34.23,
+  "steps_to_complete_mean": 34.42205323193917,
+  "win_within": {
+   "C": 0.0,
+   "2C": 0.3,
+   "4C": 0.8766666666666667,
+   "C2/2": 0.8766666666666667
+  }
+ },
+ "deterministic=False": {
+  "success_rate_mean": 0.8533333333333334,
+  "success_rate_std": 0.033993463423951924,
+  "episodes": 300,
+  "success_rate": 0.8533333333333334,
+  "fill_mean": 0.985,
+  "return_mean": 23.112309659322104,
+  "length_mean": 35.35333333333333,
+  "steps_to_complete_mean": 35.4765625,
+  "win_within": {
+   "C": 0.0,
+   "2C": 0.24333333333333335,
+   "4C": 0.8533333333333334,
+   "C2/2": 0.8533333333333334
+  }
+ }
+}
+2026-09-04 20:42:54,808 - snake4d - INFO - results written to runs\20260904-204250_evaluate_exp02_ppo_2x4_best

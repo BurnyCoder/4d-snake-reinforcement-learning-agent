@@ -1,0 +1,2 @@
+2026-09-04 20:42:47,533 - snake4d - INFO - training 3^4 (81 cells) for 30,000,000 steps on cuda: n_envs=2048 n_steps=64 batch=8192 curriculum=0
+2026-09-04 20:52:43,141 - snake4d - INFO - saved runs\20260904-204245_train_exp03a_ppo_3x4_nocur\final_model.zip after 30,015,488 timesteps

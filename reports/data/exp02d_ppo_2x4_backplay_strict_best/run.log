@@ -1,0 +1,43 @@
+2026-09-04 20:43:22,389 - snake4d - INFO - evaluating runs/20260904-204019_train_exp02d_ppo_2x4_backplay_strict//best_model.zip on 2^4 (16 cells), 100 episodes x seeds (0, 1, 2), modes (True, False)
+2026-09-04 20:43:22,997 - snake4d.evaluation - INFO - deterministic=True/seed=0: success=0.970 fill=0.996 steps_to_complete=43.54639175257732
+2026-09-04 20:43:23,239 - snake4d.evaluation - INFO - deterministic=True/seed=1: success=0.950 fill=0.990 steps_to_complete=43.4
+2026-09-04 20:43:23,483 - snake4d.evaluation - INFO - deterministic=True/seed=2: success=0.970 fill=0.998 steps_to_complete=43.54639175257732
+2026-09-04 20:43:23,856 - snake4d.evaluation - INFO - deterministic=False/seed=0: success=0.960 fill=0.991 steps_to_complete=44.53125
+2026-09-04 20:43:24,290 - snake4d.evaluation - INFO - deterministic=False/seed=1: success=0.920 fill=0.989 steps_to_complete=44.78260869565217
+2026-09-04 20:43:24,659 - snake4d.evaluation - INFO - deterministic=False/seed=2: success=1.000 fill=1.000 steps_to_complete=43.18
+2026-09-04 20:43:24,664 - snake4d - INFO - summary:
+{
+ "deterministic=True": {
+  "success_rate_mean": 0.9633333333333333,
+  "success_rate_std": 0.009428090415820642,
+  "episodes": 300,
+  "success_rate": 0.9633333333333334,
+  "fill_mean": 0.994375,
+  "return_mean": 24.46452609062195,
+  "length_mean": 43.13666666666666,
+  "steps_to_complete_mean": 43.49826989619377,
+  "win_within": {
+   "C": 0.0,
+   "2C": 0.01,
+   "4C": 0.9633333333333334,
+   "C2/2": 0.9633333333333334
+  }
+ },
+ "deterministic=False": {
+  "success_rate_mean": 0.96,
+  "success_rate_std": 0.032659863237109024,
+  "episodes": 300,
+  "success_rate": 0.96,
+  "fill_mean": 0.9935416666666667,
+  "return_mean": 24.413895931243896,
+  "length_mean": 43.766666666666666,
+  "steps_to_complete_mean": 44.142361111111114,
+  "win_within": {
+   "C": 0.0,
+   "2C": 0.03,
+   "4C": 0.9566666666666667,
+   "C2/2": 0.96
+  }
+ }
+}
+2026-09-04 20:43:24,664 - snake4d - INFO - results written to runs\20260904-204320_evaluate_exp02d_ppo_2x4_backplay_strict_best

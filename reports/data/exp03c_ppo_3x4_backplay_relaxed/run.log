@@ -1,0 +1,4 @@
+2026-09-04 21:57:14,824 - snake4d - INFO - training 3^4 (81 cells) for 30,000,000 steps on cuda: n_envs=2048 n_steps=64 batch=8192 curriculum=1
+2026-09-04 21:57:14,845 - snake4d.callbacks - INFO - curriculum: frontier 80, window 8, p_true_start 0.20
+2026-09-04 22:03:57,292 - snake4d.callbacks - INFO - curriculum: success 0.80 > rho, frontier -> 76
+2026-09-04 22:07:54,595 - snake4d - INFO - saved runs\20260904-215712_train_exp03c_ppo_3x4_backplay_relaxed\final_model.zip after 30,015,488 timesteps
