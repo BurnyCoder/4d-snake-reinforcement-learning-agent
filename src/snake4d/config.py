@@ -81,6 +81,7 @@ class Config:
     eval_every: int = 500_000
     ckpt_every: int = 2_000_000
     eval_seeds: str = "0,1,2"
+    bench_steps: int = 200_000   # PPO timesteps per benchmark row
     # --- paths / phase arguments ------------------------------------------------------------
     runs_dir: str = "runs"
     run_name: str = "run"
