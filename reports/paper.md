@@ -20,8 +20,11 @@ larger boards the result is negative within our budgets: on 3^4 (odd parity) eve
 54 % fill with no completions, and on 4^4 a 100M-step curriculum run moves the start frontier
 from 255 to 199 cells and then collapses, reaching 40 % fill from the true start (best episode
 66 %) and zero completions. We attribute the collapse to schedules tied to the total budget rather
-than to curriculum progress, and to the lack of transfer from cycle-shaped starts to true starts;
-the most promising next step is an imitation warm start from the route follower.
+than to curriculum progress, and to the lack of transfer from cycle-shaped starts to true starts.
+Behaviour-cloning the same network on 262k route-follower decisions spread over all fill levels
+(20 seconds of supervised training) yields a neural policy that completes the full 4^4 board in
+100 % of deterministic evaluation episodes (3 seeds x 100), at the follower's 16,448 steps; PPO
+fine-tuning of this clone is the route to a faster learned completer.
 
 ## 1. Introduction
 
@@ -109,6 +112,11 @@ setup -> results -> learnings:
   eight frontier advances to 199 in the first 28M steps, then the curriculum success rate fell to
   0 as the learning rate, clip range and entropy decayed towards their end values; true-start fill
   0.40 (best episode 0.66), completion 0.000 (`reports/experiments/exp04_ppo_4x4.md`).
+- exp05 - 4^4 imitation warm start: behaviour cloning of the route follower reaches 1.000
+  expert-action accuracy and the cloned network completes the board in 1.000 +- 0.000 of
+  deterministic episodes (0.787 +- 0.041 when sampling), 16,448 steps per game; exp05b fine-tunes
+  it with PPO (lr 1e-4, clip 0.1, no entropy, no curriculum) to reduce the step count
+  (`reports/experiments/exp05_bc_4x4.md`).
 
 The generated cross-run table is `reports/all_experiments.md`.
 
@@ -128,21 +136,24 @@ decay with the total budget, not with curriculum progress, so the 4^4 agent lost
 adapt exactly when the frontier reached the hardest states and its endgame success fell to zero.
 The odd 3^4 board adds the parity constraint and a two-step corner detour that was never learned.
 
-What would most likely close the gap: (1) an imitation warm start - the route follower supplies
-unlimited (observation, action) pairs on every board, and a policy that already completes the
-board only has to be made faster by RL; (2) schedules driven by the frontier, not the step
-count; (3) longer budgets with smaller frontier steps; (4) decision-time search with the learned
-value function, as in AlphaSnake.
+The imitation warm start (exp05) closes the feasibility gap: the route follower supplies
+unlimited (observation, action) pairs on every board, the states cover every fill level at once,
+and the resulting network completes the 256-cell board in every deterministic episode. What
+remains for RL is efficiency - the clone plays the 16,448-step cycle, while the learned 2^4 agent
+showed that PPO can cut a third of the steps by taking shortcuts - and robustness under sampling.
+Other candidates for the from-scratch setting are schedules driven by the frontier rather than
+the step count, longer budgets with smaller frontier steps, and decision-time search with the
+learned value function, as in AlphaSnake.
 
 ## 7. Conclusion
 
 The repository delivers a playable 4D snake, a batched training stack that runs 34k PPO steps per
 second on one laptop GPU, scripted proofs that every board size is completable (with a new
-cycle-minus-corner construction for odd sizes), a reproducible experiment loop, and a clear
-negative result: model-free MaskablePPO with a Hamiltonian reverse curriculum completes the
-16-cell 4D board in 96 % of episodes but does not complete 3^4 or 4^4 within 30M and 100M steps.
-The analysis points to imitation warm-starting and curriculum-driven schedules as the next
-experiments.
+cycle-minus-corner construction for odd sizes), a reproducible experiment loop, and two results:
+model-free MaskablePPO with a Hamiltonian reverse curriculum completes the 16-cell 4D board in
+96 % of episodes but not 3^4 or 4^4 within 30M and 100M steps; a neural network behaviour-cloned
+from the Hamiltonian follower completes the full 4^4 board in 100 % of deterministic episodes,
+and PPO fine-tuning from that clone is the path to a faster learned completer.
 
 ## References
 
