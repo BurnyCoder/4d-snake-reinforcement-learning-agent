@@ -39,6 +39,7 @@ class SnakeBatch:
         self.neigh = neighbour_table(cfg.size, cfg.ndim)  # (C, 2*ndim), -1 at walls
         self.coords = coords_of(np.arange(self.n_cells), cfg.size, cfg.ndim)  # for L1 distances
         self.route, self.closed = route_for(cfg.size, cfg.ndim)  # curriculum demonstration
+        self.route_len = len(self.route)  # C, or C-1 on odd boards (cycle minus the corner)
         self.rng = np.random.default_rng(seed)
         self.rows = np.arange(n)
         self.age = np.zeros((n, self.n_cells), dtype=np.int16)
@@ -58,7 +59,7 @@ class SnakeBatch:
 
     def set_curriculum(self, hi: int, window: int, p_true_start: float) -> None:
         """Backplay frontier: resets start at length in [hi - window, hi]; hi <= 1 turns it off."""
-        self.cur_hi = int(min(hi, self.n_cells - 1))
+        self.cur_hi = int(min(hi, self.route_len - 1))
         self.cur_window, self.p_true_start = int(window), float(p_true_start)
 
     # --- reset ---------------------------------------------------------------------------------
@@ -76,9 +77,9 @@ class SnakeBatch:
                 self.head[row] = self.rng.integers(self.n_cells)
                 self.age[row, self.head[row]] = 1
             else:  # body = route[offset : offset+length] with tail age 1 ... head age length
-                max_offset = self.n_cells if self.closed else self.n_cells - length + 1
+                max_offset = self.route_len if self.closed else self.route_len - length + 1
                 offset = self.rng.integers(max_offset)  # any rotation of a cycle is a route
-                cells = self.route[(offset + np.arange(length)) % self.n_cells]
+                cells = self.route[(offset + np.arange(length)) % self.route_len]
                 self.age[row, cells] = np.arange(1, length + 1)
                 self.head[row] = cells[-1]
         self.length[rows], self.start_len[rows] = lengths, lengths

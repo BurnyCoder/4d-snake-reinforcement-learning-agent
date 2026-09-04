@@ -1,6 +1,7 @@
 """Tests for snake4d.agents: scripted policies respect masks and the route follower completes."""
 
 import numpy as np
+import pytest
 
 from snake4d.agents import POLICIES, RandomMaskedPolicy, RoutePolicy
 from snake4d.config import Config
@@ -8,37 +9,42 @@ from snake4d.physics import SnakeBatch
 
 
 def _rollout(policy, sim: SnakeBatch, max_steps: int):
-    """Drive a SnakeBatch with a scripted policy until every row is done; return (won, steps)."""
+    """Play one episode per row (finished rows are reset); return (won, finished) per row."""
     sim.reset()
     obs = sim.observe()
-    steps = np.zeros(sim.n, dtype=int)
-    done = np.zeros(sim.n, dtype=bool)
+    won = np.zeros(sim.n, dtype=bool)
+    finished = np.zeros(sim.n, dtype=bool)
     for _ in range(max_steps):
         actions, _ = policy.predict(obs, action_masks=sim.action_masks())
         assert ((actions >= 0) & (actions < sim.cfg.n_actions)).all()
         _, terminated, truncated = sim.step(actions)
-        steps[~done] += 1
-        done |= terminated | truncated
-        if done.all():
+        done = terminated | truncated
+        first = done & ~finished
+        won[first] = sim.length[first] == sim.n_cells
+        finished |= done
+        if finished.all():
             break
+        if done.any():
+            sim.reset(np.flatnonzero(done))
         obs = sim.observe()
-    return sim.length == sim.n_cells, steps
+    return won, finished
 
 
-def test_route_policy_fills_even_boards():
-    for size, ndim in [(2, 4), (4, 2), (2, 2)]:
-        cfg = Config(size=size, ndim=ndim)
-        sim = SnakeBatch(cfg, n=16, seed=0)
-        won, steps = _rollout(RoutePolicy(cfg), sim, cfg.max_steps)
-        assert won.all() and (steps <= cfg.max_steps).all()
+@pytest.mark.parametrize(("size", "ndim"), [(2, 4), (4, 2), (2, 2), (3, 2), (3, 3), (5, 2)])
+def test_route_policy_fills_even_and_odd_boards(size, ndim):
+    cfg = Config(size=size, ndim=ndim)
+    sim = SnakeBatch(cfg, n=16, seed=0)
+    policy = RoutePolicy(cfg)
+    won, finished = _rollout(policy, sim, cfg.max_steps)
+    assert finished.all() and won.all() and policy.fallbacks == 0
 
 
-def test_route_policy_never_leaves_the_action_range_on_odd_boards():
-    cfg = Config(size=3, ndim=3)  # open Gray path: the follower must fall back at the path end
+def test_route_policy_fills_the_3x4_debug_board():
+    cfg = Config(size=3, ndim=4)  # 81 cells, cycle over 80 + guarded corner detour
     sim = SnakeBatch(cfg, n=8, seed=1)
     policy = RoutePolicy(cfg)
-    _rollout(policy, sim, 2000)
-    assert policy.fallbacks > 0
+    won, finished = _rollout(policy, sim, cfg.max_steps)
+    assert finished.all() and won.all() and policy.corner == 0 and policy.fallbacks == 0
 
 
 def test_random_policy_only_picks_legal_actions():
