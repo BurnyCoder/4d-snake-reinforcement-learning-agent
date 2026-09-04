@@ -73,6 +73,8 @@ class Backplay(BaseCallback):
     def _push(self) -> None:
         self.training_env.env_method("set_curriculum", self.hi, self.cfg.curriculum_window,
                                      self.cfg.p_true_start)
+        # read back the effective frontier: the simulator clamps it to route_len - 1 (odd boards)
+        self.hi = int(self.training_env.get_attr("sim")[0].cur_hi)
 
     def _on_training_start(self) -> None:
         self._push()

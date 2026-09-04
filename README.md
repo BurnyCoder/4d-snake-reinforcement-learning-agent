@@ -31,7 +31,8 @@ human, the training pipeline is fully scripted, and every experiment is written 
 - **Science loop.** Each experiment is pre-registered as an `.env` override file in
   [experiments/](experiments/) and written up (question, hypothesis, setup, results, learnings)
   in [reports/experiments/](reports/experiments/); [reports/all_experiments.md](reports/all_experiments.md)
-  is the generated cross-run table and [reports/paper.pdf](reports/paper.pdf) the compiled paper.
+  is the generated cross-run table and [reports/paper.md](reports/paper.md) the paper (compiled to
+  `reports/paper.pdf` by `uv run --group docs snake4d report --pdf`).
 
 ## Install
 
@@ -43,7 +44,7 @@ git clone https://github.com/BurnyCoder/4d-snake-rl.git
 cd 4d-snake-rl
 uv sync --all-groups          # creates .venv with torch 2.14 (CUDA 13.0 wheels), SB3 2.9, gymnasium 1.3, ...
 cp .env.example .env          # optional: edit any SNAKE_* key (all keys are documented there)
-uv run pytest -m "not slow"   # 90+ tests, about a minute; add -m gpu for the CUDA smoke test
+uv run pytest -m "not slow and not gpu"   # ~95 tests, about a minute; run -m gpu for the CUDA smoke test
 ```
 
 Every setting is a `SNAKE_<FIELD>` key of [src/snake4d/config.py](src/snake4d/config.py):
@@ -136,7 +137,7 @@ Known pitfalls (CUDA wheels, Windows file locks, masking errors): [docs/troubles
 The cross-experiment table is generated in [reports/all_experiments.md](reports/all_experiments.md);
 each experiment's write-up is under [reports/experiments/](reports/experiments/). Baselines
 (exp01): the Hamiltonian route follower completes 2^4, 3^4 and 4^4 in 100 % of episodes
-(68 / 1,873 / 16,400 steps on average), masked random play completes 2^4 in about 30 % and never
+(66 / 1,875 / 16,448 steps on average), masked random play completes 2^4 in about 30 % and never
 completes 3^4 or 4^4. Training results are added to the table as the experiments finish.
 
 ## Repository layout

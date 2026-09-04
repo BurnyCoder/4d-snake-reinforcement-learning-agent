@@ -28,6 +28,11 @@ def test_env_and_set_overrides(monkeypatch, tmp_path):
     assert isinstance(cfg.gamma, float) and isinstance(cfg.n_envs, int)
 
 
+def test_unknown_override_field_is_an_error():
+    with pytest.raises(ValueError, match="unknown config field"):
+        Config.from_env(None, ("sizee=3",))
+
+
 def test_missing_env_file_is_an_error():
     with pytest.raises(ValueError, match="env file not found"):
         Config.from_env("does/not/exist.env")

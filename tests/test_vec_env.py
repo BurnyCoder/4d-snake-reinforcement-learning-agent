@@ -51,7 +51,9 @@ def test_step_wait_auto_resets_with_terminal_observation():
     sim.food[:] = cell_of((2, 2), 3, 2)
     obs, reward, done, infos = env.step(np.array([1, 0]))  # row 0 walks into the x=-1 wall
     assert done[0] and not done[1] and reward[0] == cfg.r_death
-    assert infos[0]["terminal_observation"].shape == obs.shape[1:]
+    terminal = infos[0]["terminal_observation"]
+    assert terminal.shape == obs.shape[1:] and not np.shares_memory(terminal, obs)
+    assert terminal[2 * 9 : 3 * 9].argmax() == cell_of((0, 0), 3, 2)  # the pre-reset head
     assert infos[0]["TimeLimit.truncated"] is False and infos[0]["is_success"] is False
     assert sim.length[0] == 1 and sim.t[0] == 0  # row 0 was reset
     assert obs[0][2 * 9 : 3 * 9].argmax() == sim.head[0]  # fresh observation after the reset

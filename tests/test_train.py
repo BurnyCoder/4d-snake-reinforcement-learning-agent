@@ -12,7 +12,8 @@ from snake4d.train import run
 
 def tiny_config(tmp_path, **overrides) -> Config:
     """A 2^2 board with a few hundred steps of PPO; every cadence fits the small budget."""
-    return Config(size=2, ndim=2, n_envs=8, n_steps=32, batch_size=64, total_timesteps=2048,
+    return Config(size=2, ndim=2, device="cpu", net_width=32, n_envs=8, n_steps=32, batch_size=64,
+                  total_timesteps=2048,
                   eval_every=512, ckpt_every=1024, eval_episodes=4, eval_seeds="0",
                   curriculum_min_eps=5, runs_dir=str(tmp_path), **overrides)
 

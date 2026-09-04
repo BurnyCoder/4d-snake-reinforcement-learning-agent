@@ -47,9 +47,8 @@ def plot_run(run_dir: Path, out_dir: Path) -> list[Path]:
 
     out_dir.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []
-    progress_path = run_dir / "progress.csv"
-    if progress_path.exists():
-        progress = pd.read_csv(progress_path)
+    progress = read_progress(run_dir)
+    if progress is not None:
         x = progress["time/total_timesteps"]
         fig, axes = plt.subplots(2, 2, figsize=(11, 7))
         panels = [
@@ -86,21 +85,39 @@ def plot_run(run_dir: Path, out_dir: Path) -> list[Path]:
     return written
 
 
+def read_progress(run_dir: Path) -> pd.DataFrame | None:
+    """SB3's progress.csv, or None when it is missing/empty (a run that has just started)."""
+    path = run_dir / "progress.csv"
+    if not path.exists() or path.stat().st_size == 0:
+        return None
+    return pd.read_csv(path)
+
+
+def last_value(progress: pd.DataFrame, column: str):
+    """Last non-missing value of a column (eval-only dump rows leave gaps), or None."""
+    if column not in progress:
+        return None
+    series = progress[column].dropna()
+    return series.iloc[-1] if len(series) else None
+
+
 def summarize_run(run_dir: Path) -> dict:
     """One table row per run: board, phase, headline metrics read from its artifacts."""
     config = json.loads((run_dir / "config.json").read_text(encoding="utf-8"))
     row = {"run": run_name(run_dir), "phase": run_dir.name.split("_")[1],
            "board": f"{config['size']}^{config['ndim']}", "run_dir": run_dir.name}
-    progress_path = run_dir / "progress.csv"
-    if progress_path.exists():
-        progress = pd.read_csv(progress_path)
-        row["timesteps"] = int(progress["time/total_timesteps"].iloc[-1])
-        row["wall_min"] = round(float(progress["time/time_elapsed"].iloc[-1]) / 60, 1)
-        row["fps"] = int(progress["time/fps"].iloc[-1])
-        for column, key in (("rollout/fill_mean", "fill_final"),
-                            ("rollout/fill_mean_true_start", "fill_true_start_final")):
-            if column in progress and progress[column].notna().any():
-                row[key] = round(float(progress[column].dropna().iloc[-1]), 3)
+    progress = read_progress(run_dir)
+    if progress is not None:
+        for column, key in (("time/total_timesteps", "timesteps"), ("time/fps", "fps")):
+            value = last_value(progress, column)
+            if value is not None:
+                row[key] = int(value)
+        for column, key, scale in (("time/time_elapsed", "wall_min", 1 / 60),
+                                   ("rollout/fill_mean", "fill_final", 1.0),
+                                   ("rollout/fill_mean_true_start", "fill_true_start_final", 1.0)):
+            value = last_value(progress, column)
+            if value is not None:
+                row[key] = round(float(value) * scale, 3)
     evaluations = run_dir / "eval" / "evaluations.npz"
     if evaluations.exists():
         data = np.load(evaluations)
@@ -183,11 +200,14 @@ def run(cfg: Config, pdf: bool = False, reports_dir: Path = REPORTS) -> Path:
                   if p.is_dir() and (p / "config.json").exists() and "_report_" not in p.name)
     rows = []
     for source in runs:
-        if source.name.split("_")[1] == "train":
-            for figure in plot_run(source, reports_dir / "figures"):
-                logger.info("figure %s", figure)
-        copy_data(source, reports_dir / "data")
-        rows.append(summarize_run(source))
+        try:
+            if source.name.split("_")[1] == "train":
+                for figure in plot_run(source, reports_dir / "figures"):
+                    logger.info("figure %s", figure)
+            copy_data(source, reports_dir / "data")
+            rows.append(summarize_run(source))
+        except Exception:  # noqa: BLE001 - one broken/in-progress run must not stop the report
+            logger.exception("skipping %s", source)
     table = write_all_experiments(rows, reports_dir)
     logger.info("wrote %s with %d runs", table, len(rows))
     if pdf:

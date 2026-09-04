@@ -68,9 +68,11 @@ def ppo_fps(cfg: Config, row: dict, device: str, threads: int, timesteps: int) -
     cfg_threads = Config(**{**cfg.__dict__, "torch_threads": threads})
     model = build_model(cfg_threads, env, n_steps=n_steps, batch_size=batch_size, device=device)
     start = time.perf_counter()
-    model.learn(total_timesteps=timesteps)
+    try:
+        model.learn(total_timesteps=timesteps)
+    finally:
+        env.close()  # SubprocVecEnv workers must die even when a row fails
     elapsed = time.perf_counter() - start
-    env.close()
     return {**row, "device": device, "threads": threads, "n_steps": n_steps,
             "batch_size": batch_size, "timesteps": int(model.num_timesteps),
             "seconds": round(elapsed, 2), "fps": round(model.num_timesteps / elapsed)}
@@ -78,7 +80,10 @@ def ppo_fps(cfg: Config, row: dict, device: str, threads: int, timesteps: int) -
 
 def recommend(results: list[dict]) -> dict:
     """Best row -> N_ENVS/DEVICE/TORCH_THREADS; eval cadence ~ one evaluation per 10 min."""
-    best = max((r for r in results if "fps" in r), key=lambda r: r["fps"])
+    successful = [r for r in results if "fps" in r]
+    if not successful:  # every row failed: keep the measurements, recommend nothing
+        return {"best_row": None}
+    best = max(successful, key=lambda r: r["fps"])
     rollout = best["n_steps"] * best["n_envs"]
     eval_every = max(rollout, round(best["fps"] * 600 / rollout) * rollout)
     return {"SNAKE_N_ENVS": best["n_envs"], "SNAKE_DEVICE": best["device"],
