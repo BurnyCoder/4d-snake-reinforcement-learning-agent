@@ -1,0 +1,10 @@
+{
+  "torch": "2.14.0+cu130",
+  "gymnasium": "1.3.0",
+  "stable-baselines3": "2.9.0",
+  "sb3-contrib": "2.9.0",
+  "numpy": "2.5.2",
+  "pygame-ce": "2.5.8",
+  "git_commit": "212b78092dfcae4aa3947fb1106e7c65cc969c7c",
+  "cuda_device": "NVIDIA GeForce RTX 5070 Laptop GPU"
+}
