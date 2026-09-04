@@ -37,7 +37,8 @@ Schedules use SB3's `LinearSchedule(start, end, 1.0)` (`get_linear_fn` is deprec
 
 ## Reward
 
-`+1` food, `-1` death, `+10` win, `-0.001` per step, `0` on truncation (see docs/game_rules.md).
+`+1` food, `-1` death, `+10` win, `-0.001` per step including the truncating step, never a death
+penalty on truncation (see docs/game_rules.md).
 The win bonus dominates the sum of food rewards on small boards so the objective is "fill the
 board", not "eat a lot"; the step penalty removes the incentive to idle; deaths are the only
 penalty. Distance-based progress bonuses are deliberately absent: the reference repository uses

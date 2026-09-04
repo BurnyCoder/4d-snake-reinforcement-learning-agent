@@ -31,7 +31,7 @@ An episode is a success when the snake length reaches `C = size**ndim` within th
   numbers are directly comparable.
 
 Outputs: `runs/<ts>_evaluate_<name>/summary.json` (per run and per mode) and
-`eval_episodes.csv` (one row per episode: seed, mode, success, fill, length, return).
+`eval_episodes.csv` (one row per episode: seed, deterministic, success, fill, length, return).
 
 ## During training
 
