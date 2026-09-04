@@ -18,12 +18,12 @@ license = "MIT"
 # (https://pypi.org/pypi/stable-baselines3/2.9.0/json); numpy 2.5 needs >=3.12.
 requires-python = ">=3.13,<3.14"
 dependencies = [
-    "torch>=2.14.0",             # https://pytorch.org/blog/pytorch-2-14-release-blog/ (cu130 wheels, sm_120)
+    "torch>=2.14.0",             # https://pytorch.org/blog/pytorch-2-14-release-blog/ (installed from the cu130 index below)
     "gymnasium>=1.3.0",          # https://gymnasium.farama.org/api/env/
     "stable-baselines3>=2.9.0",  # https://stable-baselines3.readthedocs.io/en/master/misc/changelog.html
     "sb3-contrib>=2.9.0",        # https://sb3-contrib.readthedocs.io/en/master/modules/ppo_mask.html
     "numpy>=2.5",                # https://numpy.org/doc/stable/
-    "pygame-ce>=2.5.8",          # https://pypi.org/project/pygame-ce/ (classic pygame lacks new wheels)
+    "pygame-ce>=2.5.8",          # gymnasium 1.3 depends on pygame-ce (https://github.com/Farama-Foundation/Gymnasium/releases/tag/v1.3.0); classic pygame's last release is 2.6.1 of 2024-09-29 (https://pypi.org/project/pygame/#history)
     "pandas>=2.2",               # reads SB3 progress.csv for figures
     "matplotlib>=3.11",          # learning-curve figures
     "tensorboard>=2.21",         # SB3 "tensorboard" logger output format
@@ -45,7 +45,10 @@ docs = [
     "markdown-pdf>=1.13",
 ]
 
-# Bind torch to the explicit CUDA 13.0 index (Blackwell/sm_120 SASS is only in cu130+ wheels).
+# Bind torch to the explicit CUDA 13.0 index: the PyPI Windows wheel is CPU-only
+# (https://docs.astral.sh/uv/guides/integration/pytorch/); Blackwell (sm_120) needs a CUDA 12.8+ build,
+# first shipped in torch 2.7 (https://github.com/pytorch/pytorch/releases/tag/v2.7.0), and the cu128 index
+# stops at torch 2.11 (https://github.com/pytorch/pytorch/issues/164342) while cu130 carries 2.14.
 [tool.uv.sources]
 torch = [
     { index = "pytorch-cu130", marker = "sys_platform == 'win32' or sys_platform == 'linux'" },
@@ -70,6 +73,9 @@ target-version = "py313"
 [tool.ruff.lint]
 # pyflakes, pycodestyle, isort, bugbear, pyupgrade: https://docs.astral.sh/ruff/rules/
 select = ["E", "F", "W", "I", "B", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/test_docs_numbers.py" = ["E501"]  # one expected-string formatter per line, by design
 
 [build-system]
 requires = ["uv_build>=0.12.3,<0.13.0"]

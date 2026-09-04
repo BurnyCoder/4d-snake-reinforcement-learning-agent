@@ -53,7 +53,7 @@ class Config:
     n_envs: int = 4096          # docs/benchmark.md: batched env on CUDA peaks at 4096
     total_timesteps: int = 20_000_000
     n_steps: int = 64           # rollout = 64 * 4096 = 262,144 samples
-    batch_size: int = 8192      # docs/benchmark.md: 2048 -> 8192 raises fps 21k -> 34k
+    batch_size: int = 8192      # docs/benchmark.md minibatch sweep: larger minibatches raise fps
     n_epochs: int = 4
     gamma: float = 0.99
     gae_lambda: float = 0.95
@@ -66,7 +66,7 @@ class Config:
     max_grad_norm: float = 0.5
     target_kl: float = 0.03
     net_width: int = 512
-    device: str = "auto"        # cuda when available (measured 6x faster than cpu)
+    device: str = "auto"        # cuda when available (docs/benchmark.md: cuda rows beat cpu rows)
     torch_threads: int = 8      # docs/benchmark.md: 8 threads beat 1 on every CPU row
     seed: int = 0
     # --- curriculum -------------------------------------------------------------------------
@@ -78,10 +78,11 @@ class Config:
     p_true_start: float = 0.2
     # --- evaluation -------------------------------------------------------------------------
     eval_episodes: int = 100
-    eval_every: int = 2_097_152  # 8 rollouts of 262,144 (about a minute at 34k fps)
+    eval_every: int = 2_097_152  # 8 rollouts of 262,144 (about a minute at docs/benchmark.md fps)
     ckpt_every: int = 8_388_608  # 32 rollouts
     eval_seeds: str = "0,1,2"
     bench_steps: int = 200_000   # PPO timesteps per benchmark row
+    bench_batch_sizes: str = "2048,8192,16384"  # minibatch sweep on the best benchmark row
     # --- imitation warm start (phase `imitate`) ---------------------------------------------
     bc_epochs: int = 20          # passes over the n_envs * n_steps expert samples
     bc_lr: float = 1e-3          # Adam learning rate for behaviour cloning
@@ -127,7 +128,8 @@ class Config:
 
     @property
     def max_steps(self) -> int:
-        """Absolute episode cap C*C; a cycle follower needs ~C*C/2 so it still completes."""
+        """Absolute episode cap C*C: a cycle follower needs at most ~C*C/2 (one lap per food)
+        and ~C*C/4 on average (exp01: 16,448 steps on 4^4), so it always completes in time."""
         return self.n_cells * self.n_cells
 
     @property
@@ -139,6 +141,11 @@ class Config:
     def seeds(self) -> tuple[int, ...]:
         """Evaluation seeds parsed from the comma-separated ``eval_seeds`` string."""
         return tuple(int(s) for s in self.eval_seeds.split(",") if s.strip())
+
+    @property
+    def bench_batches(self) -> tuple[int, ...]:
+        """Minibatch sizes of the benchmark sweep, parsed from ``bench_batch_sizes``."""
+        return tuple(int(s) for s in self.bench_batch_sizes.split(",") if s.strip())
 
     # --- construction / persistence ----------------------------------------------------------
     @classmethod
