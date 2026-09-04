@@ -114,9 +114,11 @@ setup -> results -> learnings:
   0.40 (best episode 0.66), completion 0.000 (`reports/experiments/exp04_ppo_4x4.md`).
 - exp05 - 4^4 imitation warm start: behaviour cloning of the route follower reaches 1.000
   expert-action accuracy and the cloned network completes the board in 1.000 +- 0.000 of
-  deterministic episodes (0.787 +- 0.041 when sampling), 16,448 steps per game; exp05b fine-tunes
-  it with PPO (lr 1e-4, clip 0.1, no entropy, no curriculum) to reduce the step count
-  (`reports/experiments/exp05_bc_4x4.md`).
+  deterministic episodes (0.787 +- 0.041 when sampling), 16,448 steps per game. exp05b fine-tuned
+  it with PPO for 20M steps (lr 1e-4, clip 0.1, no entropy, no curriculum): completion stayed at
+  1.00 in all nine evaluations but the step count did not move and `approx_kl` was 0.000
+  throughout - a clone with ~0.9998 probability on the expert move gives PPO nothing to compare,
+  so fine-tuning needs deliberate exploration (`reports/experiments/exp05_bc_4x4.md`).
 
 The generated cross-run table is `reports/all_experiments.md`.
 

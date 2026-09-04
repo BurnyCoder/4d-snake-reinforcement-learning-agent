@@ -27,7 +27,7 @@ uv sync --all-groups
 uv run pytest -m "not slow and not gpu"
 uv run pytest -m gpu
 uv run ruff check src tests
-uv run snake4d <bench|play|train|evaluate|report|pipeline> [--env-file FILE] [--set field=value]
+uv run snake4d <bench|play|train|imitate|evaluate|report|pipeline> [--env-file FILE] [--set field=value]
 ```
 
 ## Rules
