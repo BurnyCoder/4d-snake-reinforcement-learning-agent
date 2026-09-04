@@ -19,6 +19,7 @@ PHASES: dict[str, str] = {
     "bench": "snake4d.benchmark:run",      # environment/PPO throughput grid -> docs/benchmark.md
     "play": "snake4d.play:run",            # human play in a pygame window
     "train": "snake4d.train:run",          # MaskablePPO training with curriculum + evaluation
+    "imitate": "snake4d.imitation:run",    # behaviour-clone the route follower -> bc_model.zip
     "evaluate": "snake4d.evaluation:run",  # scripted policy or saved model -> summary.json
     "report": "snake4d.report:run",        # figures, tables, all_experiments.md, optional PDF
     "pipeline": "snake4d.main:pipeline",   # train -> evaluate -> report

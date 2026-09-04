@@ -82,6 +82,9 @@ class Config:
     ckpt_every: int = 8_388_608  # 32 rollouts
     eval_seeds: str = "0,1,2"
     bench_steps: int = 200_000   # PPO timesteps per benchmark row
+    # --- imitation warm start (phase `imitate`) ---------------------------------------------
+    bc_epochs: int = 20          # passes over the n_envs * n_steps expert samples
+    bc_lr: float = 1e-3          # Adam learning rate for behaviour cloning
     # --- paths / phase arguments ------------------------------------------------------------
     runs_dir: str = "runs"
     run_name: str = "run"

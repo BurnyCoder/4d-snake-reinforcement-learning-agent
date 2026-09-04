@@ -57,6 +57,8 @@ uv run snake4d play --set size=3                 # human play: WASD = x/y, IJKL 
 uv run snake4d bench                             # throughput grid -> docs/benchmark.md
 uv run snake4d evaluate --set policy=route       # scripted baseline on the default 4^4 board
 uv run snake4d train --env-file experiments/exp02_ppo_2x4.env
+uv run snake4d imitate --env-file experiments/exp05_bc_4x4.env   # behaviour-clone the route follower -> bc_model.zip
+uv run snake4d train --set model_path=runs/<imitate run>/bc_model.zip   # PPO fine-tune from the clone
 uv run snake4d evaluate --set model_path=runs/<run>/best_model.zip --set size=2 --set ndim=4
 uv run snake4d report                            # figures + reports/all_experiments.md
 uv run --group docs snake4d report --pdf         # ... plus reports/paper.pdf
@@ -100,6 +102,7 @@ flowchart LR
     end
     subgraph rl [Learning]
         train[train.py: MaskablePPO, SB3 logger, callbacks]
+        imitation[imitation.py: behaviour cloning of the route follower]
         callbacks[callbacks.py: FillLogger, Backplay]
         agents[agents.py: RoutePolicy, RandomMaskedPolicy]
         evaluation[evaluation.py: masked evaluate_policy, summary.json]
@@ -112,7 +115,8 @@ flowchart LR
         reports[(reports/ ... figures, data, all_experiments.md, paper.pdf)]
     end
     main --> config
-    main --> train & evaluation & bench & play & report
+    main --> train & evaluation & bench & play & report & imitation
+    agents --> imitation --> runs
     grid --> physics
     hamilton --> physics
     physics --> env & vec
