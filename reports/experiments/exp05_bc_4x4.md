@@ -34,12 +34,28 @@ steps per game?
 | policy | deterministic success | stochastic success | fill (det / stoch) | steps to complete (det) |
 |---|---|---|---|---|
 | behaviour-cloned network (exp05) | **1.000 +- 0.000** | 0.787 +- 0.041 | 1.000 / 0.901 | 16,448 |
+| clone + PPO fine-tuning, best checkpoint (exp05b) | **1.000 +- 0.000** | 0.763 +- 0.017 | 1.000 / 0.884 | 16,414 |
 | route follower (exp01, scripted) | 1.000 | - | 1.000 | 16,448 |
 | PPO + Backplay from scratch (exp04, 100M steps) | 0.000 | 0.000 | 0.401 / 0.394 | - |
 
 Expert-action accuracy after cloning: 1.000 (loss 2e-4 after 20 epochs).
 
-PPO fine-tuning (exp05b) is reported in the section below once the run has finished.
+### PPO fine-tuning (exp05b): 20M steps, 23 min, from `bc_model.zip`
+
+| metric | value |
+|---|---|
+| in-training evaluations (100 true-start episodes every 2.1M steps) | success 1.00 at every one of the 9 evaluations |
+| mean episode length at those evaluations | 16,331 - 16,514 steps (unchanged) |
+| `train/approx_kl` | 0.000 at every update |
+| throughput | 15k fps (half of exp04: every rollout ends no episode, and each evaluation is 100 x 16k steps) |
+
+H3 is **rejected in an instructive way**: the completion rate stayed at 100 %, but the policy did
+not change at all. Behaviour cloning drove the expert action's probability to ~0.9998, so every
+sampled action equals the argmax, the advantage estimates carry no information about alternative
+moves, and with `ent_coef = 0` there is no force widening the distribution: PPO's update is
+identically zero (KL 0.000). Fine-tuning a near-deterministic clone needs exploration on purpose -
+an entropy bonus or a temperature on the cloned logits, or a less over-fitted clone (early
+stopping / label smoothing) - which is the next experiment.
 
 ## Analysis and learnings
 
@@ -61,5 +77,9 @@ PPO fine-tuning (exp05b) is reported in the section below once the run has finis
 
 ## Decisions
 
-- The imitation warm start is the recommended path for larger boards; PPO's job becomes
-  efficiency (fewer steps than the cycle), evaluated in exp05b.
+- The imitation warm start is the recommended path for larger boards: it is the only learned
+  4^4 completer so far.
+- PPO's remaining job is efficiency (fewer steps than the cycle) and robustness under sampling.
+  exp05b shows a zero-entropy clone cannot be fine-tuned as is; the next arm fine-tunes with
+  `ent_coef > 0` (or clones with label smoothing) so that PPO has alternatives to evaluate, with
+  the completion rate as a hard constraint (keep `best_model.zip` by evaluation success).

@@ -146,7 +146,7 @@ each experiment's write-up is under [reports/experiments/](reports/experiments/)
 |---|---|---|---|---|
 | 2^4 (16 cells) | 100 %, 66 steps | 29 % | **96.3 %** completion, 44 steps (MaskablePPO + strict-gate Backplay, 5M steps) | [exp02](reports/experiments/exp02_ppo_2x4.md) |
 | 3^4 (81 cells, odd) | 100 %, 1,875 steps | 0 % (fill 0.23) | 0 % completion, fill 0.55 (30M steps, with or without curriculum) | [exp03](reports/experiments/exp03_ppo_3x4.md) |
-| 4^4 (256 cells) | 100 %, 16,448 steps | 0 % (fill 0.08) | PPO + curriculum from scratch: 0 %, fill 0.40 (100M steps). **Behaviour-cloned network: 100 % completion** (deterministic, 3 x 100 episodes), 16,448 steps; PPO fine-tuning in progress | [exp04](reports/experiments/exp04_ppo_4x4.md), [exp05](reports/experiments/exp05_bc_4x4.md) |
+| 4^4 (256 cells) | 100 %, 16,448 steps | 0 % (fill 0.08) | PPO + curriculum from scratch: 0 %, fill 0.40 (100M steps). **Behaviour-cloned network: 100 % completion** (deterministic, 3 x 100 episodes), 16,448 steps; PPO fine-tuning kept 100 % but changed nothing (zero-entropy clone, KL 0) | [exp04](reports/experiments/exp04_ppo_4x4.md), [exp05](reports/experiments/exp05_bc_4x4.md) |
 
 Model-free PPO with a reverse curriculum completes the smallest 4D board but not the 81- or
 256-cell boards ([exp04](reports/experiments/exp04_ppo_4x4.md) analyses why: schedules tied to
