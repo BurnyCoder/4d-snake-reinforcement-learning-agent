@@ -67,6 +67,15 @@ the success rate. Here the demonstration is the Hamiltonian route:
 Board-size curriculum (2^4 -> 3^4 -> 4^4) is done by separate runs: the observation size differs,
 so weights are not transferred.
 
+## Imitation warm start (`snake4d imitate`)
+
+exp04 showed that the reverse curriculum alone does not reach the true start on 4^4. The
+`imitate` phase behaviour-clones the same MaskablePPO policy on route-follower decisions collected
+from the batched env with starts spread over every snake length (negative log-likelihood of the
+expert action under the masked policy, Adam, `bc_epochs` passes over `n_envs * n_steps` samples),
+saves `bc_model.zip`, and `train --set model_path=...` fine-tunes it with PPO. The clone starts
+from a policy that already fills the board; RL then only has to make it faster.
+
 ## Evaluation
 
 See docs/evaluation.md.

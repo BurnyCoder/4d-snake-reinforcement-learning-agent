@@ -41,6 +41,7 @@ auto-resetting finished rows with `terminal_observation` and `TimeLimit.truncate
 | `bench` | `benchmark.py` | Config | `runs/<ts>_bench_*/benchmark.json`, `docs/benchmark.md` |
 | `play` | `play.py` | Config | `runs/<ts>_play_*/run.log` |
 | `train` | `train.py`, `callbacks.py` | Config, optional `SNAKE_MODEL_PATH` | `runs/<ts>_train_<name>/` (`run.log`, SB3 `log.txt`, `progress.csv`, TensorBoard events, `monitor.monitor.csv`, `eval/evaluations.npz`, `best_model.zip`, `checkpoints/`, `final_model.zip`, `config.json`, `versions.json`) |
+| `imitate` | `imitation.py`, `agents.py`, `train.py` | Config | `runs/<ts>_imitate_<name>/bc_model.zip` (policy behaviour-cloned on route-follower data over all snake lengths) |
 | `evaluate` | `evaluation.py`, `agents.py` | Config (`SNAKE_MODEL_PATH` or `SNAKE_POLICY`) | `runs/<ts>_evaluate_<name>/` (`summary.json`, `eval_episodes.csv`, `run.log`) |
 | `report` | `report.py` | every run directory | `reports/figures/`, `reports/data/`, `reports/all_experiments.md`, optional `reports/paper.pdf` |
 | `pipeline` | `main.py` | Config | train -> evaluate -> report |
