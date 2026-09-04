@@ -11,7 +11,9 @@ Local notes:
   linyiLYi/snake-ai decays both) via SB3's own ``LinearSchedule(start, end, end_fraction=1.0)``:
   https://stable-baselines3.readthedocs.io/en/master/common/utils.html
 * ``torch.set_num_threads``: SB3 maintainers report large CPU speed-ups with one thread for small
-  MLPs (https://github.com/DLR-RM/stable-baselines3/issues/121).
+  MLPs (https://github.com/DLR-RM/stable-baselines3/issues/121); this repo measured the opposite
+  for its 1026->512->512 policy (8 threads beat 1 on every CPU row of docs/benchmark.md), hence
+  ``torch_threads = 8`` by default.
 * Logger ``configure(run_dir, ["stdout", "log", "csv", "tensorboard"])`` writes the console
   tables, ``log.txt``, ``progress.csv`` and TensorBoard events into the run directory:
   https://stable-baselines3.readthedocs.io/en/master/common/logger.html
@@ -98,8 +100,9 @@ def run(cfg: Config) -> Path:
     logger = setup_logging(run_dir)
     env = make_env(cfg, cfg.n_envs, seed=cfg.seed, monitor_path=str(run_dir / "monitor"))
     if cfg.model_path:
-        # custom_objects replaces the hyper-parameters stored in the checkpoint with this run's
-        # Config (otherwise the saved schedules/entropy would silently apply):
+        # custom_objects overrides what the checkpoint stored for exactly these keys (both
+        # schedules, ent_coef, gamma, target_kl and the rollout shape); gae_lambda, vf_coef,
+        # max_grad_norm, the network shape and the seed keep the checkpoint's values:
         # https://stable-baselines3.readthedocs.io/en/master/guide/save_format.html
         torch.set_num_threads(cfg.torch_threads)
         model = MaskablePPO.load(cfg.model_path, env=env, device=cfg.device, custom_objects={

@@ -1,8 +1,10 @@
 """Batched stable-baselines3 VecEnv adapter: all training snakes live in one ``SnakeBatch``.
 
 Global context: PPO throughput on a cheap environment is dominated by per-env Python overhead and
-inter-process communication (SB3 docs on DummyVecEnv vs SubprocVecEnv; Gymnasium paper Fig. 1:
-custom numpy vectorisation beats both).  ``SnakeVecEnv`` therefore steps ``N`` boards with the
+inter-process communication: SB3 docs on DummyVecEnv vs SubprocVecEnv,
+https://stable-baselines3.readthedocs.io/en/master/guide/vec_envs.html
+and the Gymnasium paper's Fig. 1 (custom numpy vectorisation beats both),
+https://arxiv.org/abs/2407.17032.  ``SnakeVecEnv`` therefore steps ``N`` boards with the
 vectorised numpy rules of ``physics.py`` inside a single process; ``make_env`` wraps it in SB3's
 ``VecMonitor`` so episode statistics come from library code.  Evaluation and the training callback
 use the same factory.
@@ -58,6 +60,7 @@ class SnakeVecEnv(VecEnv):
         return self.sim.observe()
 
     def step_async(self, actions: np.ndarray) -> None:
+        """Store the actions; ``step_wait`` applies them (VecEnv's two-phase step)."""
         self._actions = np.asarray(actions, dtype=np.int64)
 
     def step_wait(self):
@@ -79,11 +82,13 @@ class SnakeVecEnv(VecEnv):
         """Nothing to release: no subprocesses, no window."""
 
     def get_attr(self, attr_name: str, indices=None) -> list:
+        """One value per env for the few attributes SB3 asks about; AttributeError otherwise."""
         if attr_name not in self.EXPOSED:
             raise AttributeError(attr_name)  # lets VecEnv.has_attr return False for anything else
         return [getattr(self, attr_name) for _ in self._get_indices(indices)]
 
     def set_attr(self, attr_name: str, value, indices=None) -> None:
+        """Set an attribute on the batch (there are no per-env objects to address)."""
         setattr(self, attr_name, value)
 
     def env_method(self, method_name: str, *args, indices=None, **kwargs) -> list:
@@ -98,6 +103,7 @@ class SnakeVecEnv(VecEnv):
         raise AttributeError(method_name)
 
     def env_is_wrapped(self, wrapper_class, indices=None) -> list[bool]:
+        """No Gymnasium wrappers exist inside the batch."""
         return [False for _ in self._get_indices(indices)]
 
     # --- extras used by sb3-contrib and the curriculum ----------------------------------------

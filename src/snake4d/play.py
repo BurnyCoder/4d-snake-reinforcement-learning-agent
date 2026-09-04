@@ -7,7 +7,8 @@ x-by-y tiles for 4D), so every cell is visible at once.
 Local notes:
 * Keys: W/S move along x (up/down inside a tile), A/D along y (left/right inside a tile),
   I/K along z (tile row up/down), J/L along w (tile column left/right) - the WASD + IJKL
-  convention of Pella86/Snake4d and the itch.io 4D snakes.  Keys beyond ``2*ndim`` are ignored.
+  convention of Pella86/Snake4d (https://github.com/Pella86/Snake4d/blob/master/main.py).
+  Keys beyond ``2*ndim`` are ignored.
 * A key that targets the neck is ignored (classic snake refuses reversals); walls and body kill.
 * Rendering is one ``pygame.surfarray.make_surface`` of the RGB montage
   (https://pyga.me/docs/ref/surfarray.html), no per-cell draw loop.

@@ -1,7 +1,8 @@
 """Scripted policies that plug into the same evaluation pipeline as trained models.
 
 Global context: the Hamiltonian route follower proves that a board is completable and gives the
-perfect-play step count to beat (twanvl/snake, MIT: a fixed cycle wins 100 % of games); the masked
+perfect-play step count to beat (twanvl/snake, MIT, https://github.com/twanvl/snake: a fixed
+cycle wins 100 % of its 30x30 games); the masked
 random policy is the floor.  Both duck-type ``MaskablePPO.predict`` so sb3-contrib's
 ``evaluate_policy`` drives them exactly like a trained agent (``evaluation.py``).
 
@@ -12,8 +13,9 @@ Local notes:
   head, body and food are decoded from the observation blocks of ``physics.observe``.
 * On odd boards the route is a cycle over every cell but the corner (``hamilton``).  The follower
   enters the corner only when the food is there and the skipped arc of the cycle up to the exit
-  cell is free, so the head can never run into its own tail (twanvl's "shortcut only when the
-  head cannot overtake the tail" rule, applied to a one-cell detour).
+  cell is free, so the head can never run into its own tail (the perturbed-Hamiltonian-cycle
+  rule "the head must never overtake the tail" from johnflux's Nokia-snake write-up,
+  https://johnflux.com/2015/05/02/nokia-6110-part-3-algorithms/, applied to a one-cell detour).
 """
 
 import numpy as np
