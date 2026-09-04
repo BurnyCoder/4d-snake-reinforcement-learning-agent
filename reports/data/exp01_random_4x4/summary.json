@@ -1,0 +1,71 @@
+{
+  "board": "4^4",
+  "n_cells": 256,
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "per_run": {
+    "deterministic=True/seed=0": {
+      "episodes": 100,
+      "success_rate": 0.0,
+      "fill_mean": 0.0754296875,
+      "return_mean": 13.221383314281702,
+      "length_mean": 4489.17,
+      "steps_to_complete_mean": null,
+      "win_within": {
+        "C": 0.0,
+        "2C": 0.0,
+        "4C": 0.0,
+        "C2/2": 0.0
+      }
+    },
+    "deterministic=True/seed=1": {
+      "episodes": 100,
+      "success_rate": 0.0,
+      "fill_mean": 0.07765625,
+      "return_mean": 13.496571872383356,
+      "length_mean": 4743.94,
+      "steps_to_complete_mean": null,
+      "win_within": {
+        "C": 0.0,
+        "2C": 0.0,
+        "4C": 0.0,
+        "C2/2": 0.0
+      }
+    },
+    "deterministic=True/seed=2": {
+      "episodes": 100,
+      "success_rate": 0.0,
+      "fill_mean": 0.0780078125,
+      "return_mean": 13.63942467711866,
+      "length_mean": 4731.13,
+      "steps_to_complete_mean": null,
+      "win_within": {
+        "C": 0.0,
+        "2C": 0.0,
+        "4C": 0.0,
+        "C2/2": 0.0
+      }
+    }
+  },
+  "modes": {
+    "deterministic=True": {
+      "success_rate_mean": 0.0,
+      "success_rate_std": 0.0,
+      "episodes": 300,
+      "success_rate": 0.0,
+      "fill_mean": 0.07703125,
+      "return_mean": 13.452459954594572,
+      "length_mean": 4654.746666666667,
+      "steps_to_complete_mean": null,
+      "win_within": {
+        "C": 0.0,
+        "2C": 0.0,
+        "4C": 0.0,
+        "C2/2": 0.0
+      }
+    }
+  }
+}

@@ -71,10 +71,10 @@ class Config:
     seed: int = 0
     # --- curriculum -------------------------------------------------------------------------
     curriculum: int = 1
-    curriculum_window: int = 8
+    curriculum_window: int = 4     # exp02d: narrow window + strict gate beat the loose defaults
     curriculum_delta: int = 0   # 0 -> max(1, n_cells // 64), see curriculum_step
-    curriculum_rho: float = 0.2
-    curriculum_min_eps: int = 200
+    curriculum_rho: float = 0.9    # advance only once the frontier is mastered (exp02d)
+    curriculum_min_eps: int = 500
     p_true_start: float = 0.2
     # --- evaluation -------------------------------------------------------------------------
     eval_episodes: int = 100
