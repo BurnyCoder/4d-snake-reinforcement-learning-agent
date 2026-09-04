@@ -133,7 +133,11 @@ def copy_data(run_dir: Path, data_dir: Path) -> None:
 
 def write_all_experiments(rows: list[dict], reports_dir: Path) -> Path:
     """``reports/all_experiments.md``: cross-run table plus links; prose stays in the exp files."""
-    table = pd.DataFrame(rows).fillna("")
+    table = pd.DataFrame(rows)
+    for column in ("timesteps", "fps", "eval_success_best_at"):
+        if column in table:  # integers stay readable next to missing values (no float cast)
+            table[column] = table[column].map(lambda v: "" if pd.isna(v) else f"{int(v):,}")
+    table = table.fillna("")
     columns = [c for c in ("run", "phase", "board", "timesteps", "wall_min", "fps", "fill_final",
                            "fill_true_start_final", "eval_success_final", "eval_success_best",
                            "eval_success_best_at", "success_det", "success_stoch", "fill_det",
