@@ -28,6 +28,7 @@ dependencies = [
     "matplotlib>=3.11",          # learning-curve figures
     "tensorboard>=2.21",         # SB3 "tensorboard" logger output format
     "python-dotenv>=1.2",        # https://pypi.org/project/python-dotenv/
+    "tabulate>=0.10.0",
 ]
 
 [project.scripts]
