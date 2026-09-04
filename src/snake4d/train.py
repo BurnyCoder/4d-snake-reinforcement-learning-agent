@@ -98,8 +98,17 @@ def run(cfg: Config) -> Path:
     logger = setup_logging(run_dir)
     env = make_env(cfg, cfg.n_envs, seed=cfg.seed, monitor_path=str(run_dir / "monitor"))
     if cfg.model_path:
-        model = MaskablePPO.load(cfg.model_path, env=env, device=cfg.device)
-        logger.info("resumed %s", cfg.model_path)
+        # custom_objects replaces the hyper-parameters stored in the checkpoint with this run's
+        # Config (otherwise the saved schedules/entropy would silently apply):
+        # https://stable-baselines3.readthedocs.io/en/master/guide/save_format.html
+        torch.set_num_threads(cfg.torch_threads)
+        model = MaskablePPO.load(cfg.model_path, env=env, device=cfg.device, custom_objects={
+            "learning_rate": LinearSchedule(cfg.lr_start, cfg.lr_end, 1.0),
+            "clip_range": LinearSchedule(cfg.clip_start, cfg.clip_end, 1.0),
+            "ent_coef": cfg.ent_coef, "gamma": cfg.gamma, "target_kl": cfg.target_kl,
+            "n_steps": cfg.n_steps, "batch_size": cfg.batch_size, "n_epochs": cfg.n_epochs,
+        })
+        logger.info("resumed %s with this run's schedules and hyper-parameters", cfg.model_path)
     else:
         model = build_model(cfg, env)
     model.set_logger(configure(str(run_dir), ["stdout", "log", "csv", "tensorboard"]))
