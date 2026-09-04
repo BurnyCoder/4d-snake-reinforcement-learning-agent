@@ -135,10 +135,21 @@ Known pitfalls (CUDA wheels, Windows file locks, masking errors): [docs/troubles
 ## Results
 
 The cross-experiment table is generated in [reports/all_experiments.md](reports/all_experiments.md);
-each experiment's write-up is under [reports/experiments/](reports/experiments/). Baselines
-(exp01): the Hamiltonian route follower completes 2^4, 3^4 and 4^4 in 100 % of episodes
-(66 / 1,875 / 16,448 steps on average), masked random play completes 2^4 in about 30 % and never
-completes 3^4 or 4^4. Training results are added to the table as the experiments finish.
+each experiment's write-up is under [reports/experiments/](reports/experiments/); the paper is
+[reports/paper.md](reports/paper.md) / [reports/paper.pdf](reports/paper.pdf).
+
+| board | route follower (exp01) | random legal play (exp01) | best learned agent | write-up |
+|---|---|---|---|---|
+| 2^4 (16 cells) | 100 %, 66 steps | 29 % | **96.3 %** completion, 44 steps (MaskablePPO + strict-gate Backplay, 5M steps) | [exp02](reports/experiments/exp02_ppo_2x4.md) |
+| 3^4 (81 cells, odd) | 100 %, 1,875 steps | 0 % (fill 0.23) | 0 % completion, fill 0.55 (30M steps, with or without curriculum) | [exp03](reports/experiments/exp03_ppo_3x4.md) |
+| 4^4 (256 cells) | 100 %, 16,448 steps | 0 % (fill 0.08) | 0 % completion, fill 0.40 (best episode 0.66; 100M steps, curriculum stalled at frontier 199) | [exp04](reports/experiments/exp04_ppo_4x4.md) |
+
+So far the learned agent completes the smallest 4D board but not the 81- or 256-cell boards; the
+scripted Hamiltonian follower completes all of them. The exp04 write-up analyses why (schedules
+tied to the step budget instead of curriculum progress; no transfer from cycle-shaped starts) and
+lists the next experiments (imitation warm start from the route follower, frontier-driven
+schedules, longer budgets, decision-time search). Throughput on this laptop: 34k PPO steps/s
+(4096 batched envs on CUDA), see [exp00](reports/experiments/exp00_benchmark.md).
 
 ## Repository layout
 
