@@ -1,0 +1,43 @@
+2026-09-04 21:00:04,722 - snake4d - INFO - evaluating runs/20260904-204245_train_exp03a_ppo_3x4_nocur//best_model.zip on 3^4 (81 cells), 100 episodes x seeds (0, 1, 2), modes (True, False)
+2026-09-04 21:00:06,696 - snake4d.evaluation - INFO - deterministic=True/seed=0: success=0.000 fill=0.555 steps_to_complete=None
+2026-09-04 21:00:08,128 - snake4d.evaluation - INFO - deterministic=True/seed=1: success=0.000 fill=0.581 steps_to_complete=None
+2026-09-04 21:00:09,541 - snake4d.evaluation - INFO - deterministic=True/seed=2: success=0.000 fill=0.563 steps_to_complete=None
+2026-09-04 21:00:11,264 - snake4d.evaluation - INFO - deterministic=False/seed=0: success=0.000 fill=0.556 steps_to_complete=None
+2026-09-04 21:00:12,947 - snake4d.evaluation - INFO - deterministic=False/seed=1: success=0.000 fill=0.556 steps_to_complete=None
+2026-09-04 21:00:14,654 - snake4d.evaluation - INFO - deterministic=False/seed=2: success=0.000 fill=0.547 steps_to_complete=None
+2026-09-04 21:00:14,660 - snake4d - INFO - summary:
+{
+ "deterministic=True": {
+  "success_rate_mean": 0.0,
+  "success_rate_std": 0.0,
+  "episodes": 300,
+  "success_rate": 0.0,
+  "fill_mean": 0.5661728395061728,
+  "return_mean": 43.67853048324585,
+  "length_mean": 182.52333333333334,
+  "steps_to_complete_mean": null,
+  "win_within": {
+   "C": 0.0,
+   "2C": 0.0,
+   "4C": 0.0,
+   "C2/2": 0.0
+  }
+ },
+ "deterministic=False": {
+  "success_rate_mean": 0.0,
+  "success_rate_std": 0.0,
+  "episodes": 300,
+  "success_rate": 0.0,
+  "fill_mean": 0.5529629629629631,
+  "return_mean": 42.609669570922854,
+  "length_mean": 181.38333333333333,
+  "steps_to_complete_mean": null,
+  "win_within": {
+   "C": 0.0,
+   "2C": 0.0,
+   "4C": 0.0,
+   "C2/2": 0.0
+  }
+ }
+}
+2026-09-04 21:00:14,660 - snake4d - INFO - results written to runs\20260904-210002_evaluate_exp03a_ppo_3x4_nocur_best

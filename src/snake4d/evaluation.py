@@ -37,6 +37,7 @@ def run_episodes(policy, cfg: Config, seed: int, deterministic: bool) -> list[di
     episodes: list[dict] = []
 
     def on_step(locals_: dict, _globals: dict) -> None:
+        """evaluate_policy callback: record one row per finished episode from info["episode"]."""
         if locals_["done"]:  # Monitor adds info["episode"] = {r, l, t, *INFO_KEYS} at episode end
             ep = locals_["info"]["episode"]
             episodes.append(

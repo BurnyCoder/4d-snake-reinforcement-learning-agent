@@ -1,0 +1,10 @@
+2026-09-04 21:02:51,869 - snake4d - INFO - training 4^4 (256 cells) for 100,000,000 steps on cuda: n_envs=4096 n_steps=64 batch=8192 curriculum=1
+2026-09-04 21:02:51,924 - snake4d.callbacks - INFO - curriculum: frontier 255, window 16, p_true_start 0.20
+2026-09-04 21:11:59,656 - snake4d.callbacks - INFO - curriculum: success 0.80 > rho, frontier -> 247
+2026-09-04 21:13:49,303 - snake4d.callbacks - INFO - curriculum: success 0.83 > rho, frontier -> 239
+2026-09-04 21:13:57,664 - snake4d.callbacks - INFO - curriculum: success 0.83 > rho, frontier -> 231
+2026-09-04 21:22:53,860 - snake4d.callbacks - INFO - curriculum: success 0.84 > rho, frontier -> 223
+2026-09-04 21:25:55,578 - snake4d.callbacks - INFO - curriculum: success 0.81 > rho, frontier -> 215
+2026-09-04 21:26:12,089 - snake4d.callbacks - INFO - curriculum: success 0.83 > rho, frontier -> 207
+2026-09-04 21:29:58,114 - snake4d.callbacks - INFO - curriculum: success 0.81 > rho, frontier -> 199
+2026-09-04 21:56:36,857 - snake4d - INFO - saved runs\20260904-210249_train_exp04_ppo_4x4\final_model.zip after 100,139,008 timesteps

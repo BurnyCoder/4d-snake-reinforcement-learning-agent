@@ -29,7 +29,7 @@ from snake4d.logging_utils import make_run_dir, setup_logging
 
 REPORTS = Path("reports")
 DATA_FILES = ("summary.json", "config.json", "versions.json", "eval_episodes.csv",
-              "benchmark.json", "eval/evaluations.npz")
+              "benchmark.json", "eval/evaluations.npz", "progress.csv", "run.log")
 log = logging.getLogger("snake4d.report")
 
 
@@ -138,6 +138,30 @@ def summarize_run(run_dir: Path) -> dict:
     return row
 
 
+def episode_stats(run_dir: Path) -> dict | None:
+    """Per-run episode statistics from VecMonitor's CSV, split by true vs curriculum starts."""
+    if not any(run_dir.glob("*.monitor.csv")):
+        return None
+    episodes = load_results(str(run_dir))
+    true_start = episodes[episodes["start_len"] == 1]
+    curriculum = episodes[episodes["start_len"] > 1]
+
+    def stats(subset: pd.DataFrame, prefix: str) -> dict:
+        """Count, fill mean/max, mean length and success rate of one subset of episodes."""
+        if not len(subset):
+            return {f"{prefix}_episodes": 0}
+        return {
+            f"{prefix}_episodes": int(len(subset)),
+            f"{prefix}_fill_mean": round(float(subset["fill"].mean()), 4),
+            f"{prefix}_fill_max": float(subset["fill"].max()),
+            f"{prefix}_len_mean": round(float(subset["l"].mean()), 1),
+            f"{prefix}_success_rate": round(float(subset["is_success"].astype(float).mean()), 4),
+        }
+
+    return {"episodes": int(len(episodes)), **stats(true_start, "true_start"),
+            **stats(curriculum, "curriculum")}
+
+
 def copy_data(run_dir: Path, data_dir: Path) -> None:
     """Keep the small artifacts of a run under version control (runs/ itself is ignored)."""
     target = data_dir / run_name(run_dir)
@@ -146,6 +170,9 @@ def copy_data(run_dir: Path, data_dir: Path) -> None:
         source = run_dir / name
         if source.exists():
             shutil.copy2(source, target / source.name)
+    stats = episode_stats(run_dir)
+    if stats:  # the monitor CSV itself is large; its summary is what the reports cite
+        (target / "episodes.json").write_text(json.dumps(stats, indent=2), encoding="utf-8")
 
 
 def write_all_experiments(rows: list[dict], reports_dir: Path) -> Path:

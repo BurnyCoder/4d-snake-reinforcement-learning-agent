@@ -1,0 +1,17 @@
+2026-09-04 20:40:21,318 - snake4d - INFO - training 2^4 (16 cells) for 5,000,000 steps on cuda: n_envs=1024 n_steps=32 batch=4096 curriculum=1
+2026-09-04 20:40:21,330 - snake4d.callbacks - INFO - curriculum: frontier 15, window 4, p_true_start 0.20
+2026-09-04 20:40:30,344 - snake4d.callbacks - INFO - curriculum: success 0.92 > rho, frontier -> 14
+2026-09-04 20:40:31,206 - snake4d.callbacks - INFO - curriculum: success 0.90 > rho, frontier -> 13
+2026-09-04 20:40:34,428 - snake4d.callbacks - INFO - curriculum: success 0.91 > rho, frontier -> 12
+2026-09-04 20:40:35,213 - snake4d.callbacks - INFO - curriculum: success 0.91 > rho, frontier -> 11
+2026-09-04 20:40:37,494 - snake4d.callbacks - INFO - curriculum: success 0.90 > rho, frontier -> 10
+2026-09-04 20:40:38,599 - snake4d.callbacks - INFO - curriculum: success 0.90 > rho, frontier -> 9
+2026-09-04 20:40:41,895 - snake4d.callbacks - INFO - curriculum: success 0.90 > rho, frontier -> 8
+2026-09-04 20:40:42,715 - snake4d.callbacks - INFO - curriculum: success 0.92 > rho, frontier -> 7
+2026-09-04 20:40:44,195 - snake4d.callbacks - INFO - curriculum: success 0.92 > rho, frontier -> 6
+2026-09-04 20:40:44,954 - snake4d.callbacks - INFO - curriculum: success 0.91 > rho, frontier -> 5
+2026-09-04 20:40:45,738 - snake4d.callbacks - INFO - curriculum: success 0.93 > rho, frontier -> 4
+2026-09-04 20:40:47,042 - snake4d.callbacks - INFO - curriculum: success 0.92 > rho, frontier -> 3
+2026-09-04 20:40:48,662 - snake4d.callbacks - INFO - curriculum: success 0.90 > rho, frontier -> 2
+2026-09-04 20:40:50,269 - snake4d.callbacks - INFO - curriculum: success 0.92 > rho, frontier -> 1
+2026-09-04 20:42:29,721 - snake4d - INFO - saved runs\20260904-204019_train_exp02d_ppo_2x4_backplay_strict\final_model.zip after 5,013,504 timesteps

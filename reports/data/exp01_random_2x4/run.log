@@ -1,0 +1,24 @@
+2026-09-04 19:28:23,170 - snake4d - INFO - evaluating random on 2^4 (16 cells), 100 episodes x seeds (0, 1, 2), modes (True,)
+2026-09-04 19:28:23,640 - snake4d.evaluation - INFO - deterministic=True/seed=0: success=0.270 fill=0.805 steps_to_complete=135.0
+2026-09-04 19:28:24,095 - snake4d.evaluation - INFO - deterministic=True/seed=1: success=0.250 fill=0.826 steps_to_complete=125.8
+2026-09-04 19:28:24,640 - snake4d.evaluation - INFO - deterministic=True/seed=2: success=0.360 fill=0.818 steps_to_complete=127.58333333333333
+2026-09-04 19:28:24,644 - snake4d - INFO - summary:
+{
+ "deterministic=True": {
+  "success_rate_mean": 0.29333333333333333,
+  "success_rate_std": 0.047842333648024406,
+  "episodes": 300,
+  "success_rate": 0.29333333333333333,
+  "fill_mean": 0.8160416666666667,
+  "return_mean": 14.219203457732995,
+  "length_mean": 118.40666666666667,
+  "steps_to_complete_mean": 129.35227272727272,
+  "win_within": {
+   "C": 0.0,
+   "2C": 0.0,
+   "4C": 0.006666666666666667,
+   "C2/2": 0.15333333333333332
+  }
+ }
+}
+2026-09-04 19:28:24,644 - snake4d - INFO - results written to runs\20260904-192823_evaluate_exp01_random_2x4

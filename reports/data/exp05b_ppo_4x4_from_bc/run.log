@@ -1,0 +1,3 @@
+2026-09-04 22:19:42,787 - snake4d - INFO - resumed runs/20260904-221730_imitate_exp05_bc_4x4/bc_model.zip with this run's schedules and hyper-parameters
+2026-09-04 22:19:42,792 - snake4d - INFO - training 4^4 (256 cells) for 20,000,000 steps on cuda: n_envs=4096 n_steps=64 batch=8192 curriculum=0
+2026-09-04 22:42:19,390 - snake4d - INFO - saved runs\20260904-221940_train_exp05b_ppo_4x4_from_bc\final_model.zip after 20,185,088 timesteps

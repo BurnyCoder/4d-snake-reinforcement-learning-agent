@@ -3,12 +3,15 @@
 Global context: exp04 showed model-free PPO plus a reverse curriculum does not complete the 256-cell
 board within 100M steps, while the scripted Hamiltonian route follower (``agents.RoutePolicy``)
 completes it every time.  Behaviour cloning (supervised learning of the expert's action from the
-observation) gives the network a policy that already fills the board; ``train`` can then fine-tune
-it with PPO from ``SNAKE_MODEL_PATH``.
+observation; Pomerleau 1988,
+https://proceedings.neurips.cc/paper/1988/hash/812b4ba287f5ee0bc9d43bbf5bbe87fb-Abstract.html)
+gives the network a policy that already fills the board; ``train`` can then fine-tune it with
+PPO from ``SNAKE_MODEL_PATH``.
 
 Local notes:
 * Data: the batched env with curriculum-style starts spread uniformly over every snake length
-  (``set_curriculum(hi=C-1, window=C-2, p_true_start=0.2)``), stepped by the route follower, so
+  (``set_curriculum(hi=C-1, window=C-2, p_true_start=cfg.p_true_start)``, default 0.2), stepped by
+  the route follower, so
   the dataset covers early, middle and endgame states in one pass of ``n_steps`` x ``n_envs``.
 * Loss: negative log-likelihood of the expert action under the masked policy distribution -
   ``MaskableActorCriticPolicy.evaluate_actions(obs, actions, action_masks)`` returns exactly that

@@ -1,0 +1,22 @@
+2026-09-04 22:17:34,191 - snake4d - INFO - collected 262,144 expert samples on 4^4
+2026-09-04 22:17:37,599 - snake4d.imitation - INFO - bc epoch 1/20: loss 0.3587 accuracy 0.8922
+2026-09-04 22:17:38,069 - snake4d.imitation - INFO - bc epoch 2/20: loss 0.1540 accuracy 0.9135
+2026-09-04 22:17:38,560 - snake4d.imitation - INFO - bc epoch 3/20: loss 0.0695 accuracy 0.9919
+2026-09-04 22:17:39,033 - snake4d.imitation - INFO - bc epoch 4/20: loss 0.0128 accuracy 0.9995
+2026-09-04 22:17:39,515 - snake4d.imitation - INFO - bc epoch 5/20: loss 0.0042 accuracy 1.0000
+2026-09-04 22:17:39,989 - snake4d.imitation - INFO - bc epoch 6/20: loss 0.0023 accuracy 1.0000
+2026-09-04 22:17:40,485 - snake4d.imitation - INFO - bc epoch 7/20: loss 0.0015 accuracy 1.0000
+2026-09-04 22:17:40,975 - snake4d.imitation - INFO - bc epoch 8/20: loss 0.0011 accuracy 1.0000
+2026-09-04 22:17:41,462 - snake4d.imitation - INFO - bc epoch 9/20: loss 0.0009 accuracy 1.0000
+2026-09-04 22:17:41,949 - snake4d.imitation - INFO - bc epoch 10/20: loss 0.0007 accuracy 1.0000
+2026-09-04 22:17:42,425 - snake4d.imitation - INFO - bc epoch 11/20: loss 0.0006 accuracy 1.0000
+2026-09-04 22:17:42,900 - snake4d.imitation - INFO - bc epoch 12/20: loss 0.0005 accuracy 1.0000
+2026-09-04 22:17:43,345 - snake4d.imitation - INFO - bc epoch 13/20: loss 0.0004 accuracy 1.0000
+2026-09-04 22:17:43,799 - snake4d.imitation - INFO - bc epoch 14/20: loss 0.0004 accuracy 1.0000
+2026-09-04 22:17:44,254 - snake4d.imitation - INFO - bc epoch 15/20: loss 0.0003 accuracy 1.0000
+2026-09-04 22:17:44,698 - snake4d.imitation - INFO - bc epoch 16/20: loss 0.0003 accuracy 1.0000
+2026-09-04 22:17:45,162 - snake4d.imitation - INFO - bc epoch 17/20: loss 0.0003 accuracy 1.0000
+2026-09-04 22:17:45,626 - snake4d.imitation - INFO - bc epoch 18/20: loss 0.0002 accuracy 1.0000
+2026-09-04 22:17:46,098 - snake4d.imitation - INFO - bc epoch 19/20: loss 0.0002 accuracy 1.0000
+2026-09-04 22:17:46,569 - snake4d.imitation - INFO - bc epoch 20/20: loss 0.0002 accuracy 1.0000
+2026-09-04 22:17:46,647 - snake4d - INFO - saved runs\20260904-221730_imitate_exp05_bc_4x4\bc_model.zip (expert-action accuracy 1.000); fine-tune with `snake4d train --set model_path=runs\20260904-221730_imitate_exp05_bc_4x4\bc_model.zip`

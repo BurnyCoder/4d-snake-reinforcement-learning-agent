@@ -71,8 +71,13 @@ def test_report_phase_writes_table_figures_and_data(tmp_path):
     assert "exp02_ppo_2x4" in text and "exp01_route_2x4" in text and "| run " in text
     assert "[exp02_ppo_2x4](experiments/exp02_ppo_2x4.md)" in text
     assert (reports / "figures" / "exp02_ppo_2x4_curves.png").exists()
-    assert (reports / "data" / "exp02_ppo_2x4" / "evaluations.npz").exists()
+    data = reports / "data" / "exp02_ppo_2x4"
+    assert (data / "evaluations.npz").exists() and (data / "progress.csv").exists()
+    stats = json.loads((data / "episodes.json").read_text(encoding="utf-8"))
+    assert stats["true_start_episodes"] == 4 and stats["curriculum_episodes"] == 0
+    assert stats["true_start_fill_max"] == 1.0 and stats["true_start_success_rate"] == 0.5
     assert (reports / "data" / "exp01_route_2x4" / "summary.json").exists()
+    assert not (reports / "data" / "exp01_route_2x4" / "episodes.json").exists()
 
 
 @pytest.mark.slow

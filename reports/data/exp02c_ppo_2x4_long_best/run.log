@@ -1,0 +1,43 @@
+2026-09-04 20:43:12,724 - snake4d - INFO - evaluating runs/20260904-195216_train_exp02c_ppo_2x4_long//best_model.zip on 2^4 (16 cells), 100 episodes x seeds (0, 1, 2), modes (True, False)
+2026-09-04 20:43:13,299 - snake4d.evaluation - INFO - deterministic=True/seed=0: success=0.940 fill=0.989 steps_to_complete=35.340425531914896
+2026-09-04 20:43:13,507 - snake4d.evaluation - INFO - deterministic=True/seed=1: success=0.930 fill=0.990 steps_to_complete=36.043010752688176
+2026-09-04 20:43:13,739 - snake4d.evaluation - INFO - deterministic=True/seed=2: success=0.930 fill=0.994 steps_to_complete=35.623655913978496
+2026-09-04 20:43:14,020 - snake4d.evaluation - INFO - deterministic=False/seed=0: success=0.890 fill=0.986 steps_to_complete=35.41573033707865
+2026-09-04 20:43:14,358 - snake4d.evaluation - INFO - deterministic=False/seed=1: success=0.870 fill=0.979 steps_to_complete=36.160919540229884
+2026-09-04 20:43:14,652 - snake4d.evaluation - INFO - deterministic=False/seed=2: success=0.830 fill=0.984 steps_to_complete=36.33734939759036
+2026-09-04 20:43:14,661 - snake4d - INFO - summary:
+{
+ "deterministic=True": {
+  "success_rate_mean": 0.9333333333333335,
+  "success_rate_std": 0.004714045207910268,
+  "episodes": 300,
+  "success_rate": 0.9333333333333333,
+  "fill_mean": 0.9910416666666667,
+  "return_mean": 24.088959550857545,
+  "length_mean": 35.37,
+  "steps_to_complete_mean": 35.667857142857144,
+  "win_within": {
+   "C": 0.0,
+   "2C": 0.23333333333333334,
+   "4C": 0.9333333333333333,
+   "C2/2": 0.9333333333333333
+  }
+ },
+ "deterministic=False": {
+  "success_rate_mean": 0.8633333333333333,
+  "success_rate_std": 0.024944382578492966,
+  "episodes": 300,
+  "success_rate": 0.8633333333333333,
+  "fill_mean": 0.9829166666666667,
+  "return_mean": 23.188942839304605,
+  "length_mean": 35.38666666666666,
+  "steps_to_complete_mean": 35.96138996138996,
+  "win_within": {
+   "C": 0.0,
+   "2C": 0.21333333333333335,
+   "4C": 0.8633333333333333,
+   "C2/2": 0.8633333333333333
+  }
+ }
+}
+2026-09-04 20:43:14,661 - snake4d - INFO - results written to runs\20260904-204310_evaluate_exp02c_ppo_2x4_long_best

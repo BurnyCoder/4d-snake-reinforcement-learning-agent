@@ -1,0 +1,43 @@
+2026-09-04 20:43:02,845 - snake4d - INFO - evaluating runs/20260904-194950_train_exp02b_ppo_2x4_backplay//best_model.zip on 2^4 (16 cells), 100 episodes x seeds (0, 1, 2), modes (True, False)
+2026-09-04 20:43:03,406 - snake4d.evaluation - INFO - deterministic=True/seed=0: success=0.880 fill=0.983 steps_to_complete=34.30681818181818
+2026-09-04 20:43:03,654 - snake4d.evaluation - INFO - deterministic=True/seed=1: success=0.810 fill=0.976 steps_to_complete=34.901234567901234
+2026-09-04 20:43:03,921 - snake4d.evaluation - INFO - deterministic=True/seed=2: success=0.860 fill=0.981 steps_to_complete=34.51162790697674
+2026-09-04 20:43:04,326 - snake4d.evaluation - INFO - deterministic=False/seed=0: success=0.830 fill=0.976 steps_to_complete=35.397590361445786
+2026-09-04 20:43:04,606 - snake4d.evaluation - INFO - deterministic=False/seed=1: success=0.880 fill=0.982 steps_to_complete=35.17045454545455
+2026-09-04 20:43:04,862 - snake4d.evaluation - INFO - deterministic=False/seed=2: success=0.820 fill=0.973 steps_to_complete=36.0
+2026-09-04 20:43:04,866 - snake4d - INFO - summary:
+{
+ "deterministic=True": {
+  "success_rate_mean": 0.85,
+  "success_rate_std": 0.029439202887759468,
+  "episodes": 300,
+  "success_rate": 0.85,
+  "fill_mean": 0.98,
+  "return_mean": 22.996996259689332,
+  "length_mean": 34.0,
+  "steps_to_complete_mean": 34.56470588235294,
+  "win_within": {
+   "C": 0.0,
+   "2C": 0.28,
+   "4C": 0.85,
+   "C2/2": 0.85
+  }
+ },
+ "deterministic=False": {
+  "success_rate_mean": 0.8433333333333333,
+  "success_rate_std": 0.026246692913372727,
+  "episodes": 300,
+  "success_rate": 0.8433333333333334,
+  "fill_mean": 0.9770833333333333,
+  "return_mean": 22.875979766845703,
+  "length_mean": 35.016666666666666,
+  "steps_to_complete_mean": 35.51383399209486,
+  "win_within": {
+   "C": 0.0,
+   "2C": 0.22,
+   "4C": 0.8433333333333334,
+   "C2/2": 0.8433333333333334
+  }
+ }
+}
+2026-09-04 20:43:04,866 - snake4d - INFO - results written to runs\20260904-204300_evaluate_exp02b_ppo_2x4_backplay_best

@@ -6,13 +6,13 @@ checkpoint re-evaluated with `uv run snake4d evaluate --set model_path=...`):
 | arm | curriculum | budget | wall |
 |---|---|---|---|
 | exp02 `exp02_ppo_2x4` | off | 5M steps | 2.2 min |
-| exp02b `exp02b_ppo_2x4_backplay` | Backplay, `rho=0.2`, window 8, min 200 episodes | 5M | 2.2 min |
+| exp02b `exp02b_ppo_2x4_backplay` | Backplay, `rho=0.2`, window 8, min 200 episodes | 5M | 2.3 min |
 | exp02c `exp02c_ppo_2x4_long` | off | 20M | 8.6 min |
-| exp02d `exp02d_ppo_2x4_backplay_strict` | Backplay, `rho=0.9`, window 4, min 500 episodes | 5M | 2.2 min |
+| exp02d `exp02d_ppo_2x4_backplay_strict` | Backplay, `rho=0.9`, window 4, min 500 episodes | 5M | 2.1 min |
 
 Common settings: 1024 batched envs, `n_steps=32`, `batch_size=4096`, 4 epochs, MLP [512, 512],
 gamma 0.99, lr 3e-4 -> 1e-5, clip 0.2 -> 0.05, `ent_coef` 0.01, evaluation of 100 true-start
-episodes every 327,680 steps, CUDA (~38k fps).
+episodes every 327,680 steps (655,360 for exp02c), CUDA (36-39k steps/s, final `time/fps`).
 
 ## Question
 
@@ -44,7 +44,8 @@ Figures: `reports/figures/exp02*_curves.png` (fill, eval success, frontier, epis
   1.3M) but plateaus around 0.85-0.93; 4x more steps only lifts the best checkpoint from 0.88 to
   0.93. Rollout fill is 0.98, so the agent almost always reaches 15/16 cells.
 - Failure mode: of 61 failed evaluation episodes of the 20M model, 35 end at fill 15/16 by a
-  collision (median length 31, far below the 64-step starvation cap), i.e. the snake boxes itself in
+  collision (median length 33 for those 35, 31 over all 61 failures; far below the 64-step
+  starvation cap; `eval_episodes.csv`), i.e. the snake boxes itself in
   with one cell left. Completing the last cell requires the body to be a Hamiltonian path whose
   head can still reach the free cell - a global constraint the one-hot MLP policy only partly learns
   from sparse terminal rewards.
@@ -59,9 +60,11 @@ Figures: `reports/figures/exp02*_curves.png` (fill, eval success, frontier, epis
 - Deterministic (argmax) evaluation beats sampling for every arm except exp02d, where both agree:
   the strict-curriculum policy is confident in the endgame; the others rely on argmax to avoid
   their own exploration noise.
-- Steps to complete (34-44) are about half the route follower's 65.9: the learned agents cut
+- Steps to complete (34.4-43.5) are a third to a half below the route follower's 65.9: the
+  learned agents cut
   across the board instead of circling it, which is the efficiency gain RL buys.
-- The eval curve is noisy at 100 episodes (+-3 percentage points), which is why the reported
+- The eval curve is noisy at 100 episodes (about +-3 percentage points, the binomial standard
+  error at p = 0.9 and n = 100 - an estimate, not a measurement), which is why the reported
   numbers use the best checkpoint re-evaluated with 300 episodes; the in-training "1.00" of
   exp02d was one such 100-episode sample.
 

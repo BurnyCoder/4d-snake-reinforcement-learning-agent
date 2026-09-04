@@ -1,0 +1,9 @@
+{
+  "episodes": 1,
+  "true_start_episodes": 1,
+  "true_start_fill_mean": 0.1914,
+  "true_start_fill_max": 0.19140625,
+  "true_start_len_mean": 4718.0,
+  "true_start_success_rate": 0.0,
+  "curriculum_episodes": 0
+}

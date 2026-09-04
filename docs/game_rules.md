@@ -29,18 +29,21 @@
 |---|---|---|---|
 | wall or body collision | yes | no | `r_death = -1` |
 | board filled (`length == C`) | yes | no | `r_food + r_win = 1 + 10` |
-| `idle_mult * C` steps without eating (default 4C) | no | yes | `r_step` |
+| more than `idle_mult * C` consecutive steps without eating (`idle > idle_cap`; default 4C) | no | yes | `r_step` |
 | `C*C` steps in one episode | no | yes | `r_step` |
 
 Truncations are not deaths: SB3 bootstraps the value of the last state for them
-(`TimeLimit.truncated`), following Gymnasium's terminated/truncated semantics. Every step also
+(`TimeLimit.truncated`), following Gymnasium's terminated/truncated semantics
+(https://gymnasium.farama.org/tutorials/gymnasium_basics/handling_time_limits/). Every step also
 pays `r_step = -0.001` (except the winning step), which makes wandering forever worse than
 finishing; `Config` checks `|r_step| / (1 - gamma) < |r_death|` so dying never beats living.
 
 Optional potential-based shaping (`SNAKE_SHAPING_COEF > 0`) adds
 `coef * (gamma * Phi(s') - Phi(s))` with `Phi = -L1(head, food) / (ndim * size)` and
-`Phi(terminal) = 0`; by Ng, Harada and Russell (1999) this cannot change the optimal policy. It is
-off by default.
+`Phi(terminal) = 0` (the episodic-task condition of Grzes 2017,
+https://dl.acm.org/doi/10.5555/3091125.3091208); by Ng, Harada and Russell (1999,
+https://dl.acm.org/doi/10.5555/645528.657613) this cannot change the optimal policy. It is off
+by default.
 
 ## Observation (`4C + 2` floats in [0, 1])
 
@@ -61,15 +64,20 @@ An action is legal when the target is inside the board, its cell is free once th
 (`age <= 1`), and it is not the neck (for length 2 the tail is the neck, so the immediate
 reversal is forbidden like in classic snake; for length >= 3 the neck is already occupied). If no
 action is legal the mask falls back to every in-bounds move: MaskablePPO masks with `-1e8`, not
-`-inf`, so an all-false row would otherwise sample near-uniformly (and possibly a wall).
+`-inf` (`HUGE_NEG` in sb3-contrib's `MaskableCategorical`,
+https://github.com/Stable-Baselines-Team/stable-baselines3-contrib/blob/master/sb3_contrib/common/maskable/distributions.py),
+so an all-false row would otherwise sample near-uniformly (and possibly a wall).
 
 ## Parity and completability
 
-The grid graph is bipartite (cells coloured by coordinate-sum parity). A Hamiltonian cycle needs
-equal colour classes, hence an even number of cells:
+The grid graph is bipartite (cells coloured by coordinate-sum parity;
+https://mathworld.wolfram.com/GridGraph.html). A Hamiltonian cycle alternates colours, so it
+needs equal colour classes, hence an even number of cells:
 
-- `4^4 = 256` splits 128/128 and has a Hamiltonian cycle (Ruskey and Sawada 2003; constructed
-  recursively in `hamilton.ham_cycle`, verified by `check_route`). Following it fills the board
+- `4^4 = 256` splits 128/128 and has a Hamiltonian cycle (every rectangular grid graph with an
+  even number of cells has one: Itai, Papadimitriou and Szwarcfiter 1982,
+  https://doi.org/10.1137/0211056; `hamilton.ham_cycle` builds the 2D cycle and lifts it
+  dimension by dimension, `check_route` verifies the result). Following it fills the board
   every time (`RoutePolicy`), which is the completability proof and the step-count ceiling.
 - `3^4 = 81` splits 41/40: no Hamiltonian cycle exists, and a snake filling the board must end with
   its body as a Hamiltonian path whose ends both lie in the 41-cell class. The scripted baseline

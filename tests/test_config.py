@@ -1,6 +1,7 @@
 """Tests for snake4d.config: defaults, environment overrides, derived values and guards."""
 
 import dataclasses
+from pathlib import Path
 
 import pytest
 
@@ -12,6 +13,12 @@ def test_defaults_are_the_headline_board():
     assert (cfg.size, cfg.ndim, cfg.n_cells, cfg.n_actions) == (4, 4, 256, 8)
     assert cfg.idle_cap == 4 * 256 and cfg.max_steps == 256 * 256
     assert cfg.curriculum_step == 4 and cfg.seeds == (0, 1, 2)
+
+
+def test_env_example_documents_every_config_field():
+    text = (Path(__file__).resolve().parents[1] / ".env.example").read_text(encoding="utf-8")
+    missing = [f.name for f in dataclasses.fields(Config) if f"SNAKE_{f.name.upper()}=" not in text]
+    assert missing == []
 
 
 def test_field_types_are_castable_from_strings():

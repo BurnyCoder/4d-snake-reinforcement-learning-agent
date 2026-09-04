@@ -1,0 +1,13 @@
+{
+  "episodes": 385536,
+  "true_start_episodes": 78406,
+  "true_start_fill_mean": 0.528,
+  "true_start_fill_max": 0.8765432098765432,
+  "true_start_len_mean": 198.7,
+  "true_start_success_rate": 0.0,
+  "curriculum_episodes": 307130,
+  "curriculum_fill_mean": 0.9832,
+  "curriculum_fill_max": 1.0,
+  "curriculum_len_mean": 46.6,
+  "curriculum_success_rate": 0.6026
+}

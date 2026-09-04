@@ -8,18 +8,20 @@ rules exist exactly once.
 Local notes:
 * State is a body-age grid ``age[row, cell]``: 0 = empty, 1 = tail, ``length`` = head.  Moving the
   tail is "decrement every positive age"; collision is "age at the target cell > 0".  This is the
-  representation of PufferLib's snake (MIT,
-  https://github.com/PufferAI/PufferLib/blob/main/ocean/snake/snake.h), re-expressed in numpy.
+  ``body_state`` / ``norm_body_state`` representation of Jumanji's snake (Apache-2.0,
+  https://github.com/instadeepai/jumanji/blob/main/jumanji/environments/routing/snake/env.py;
+  oscarknagg/wurm describes the same encoding), re-expressed in numpy over a batch of boards.
 * Order of one step (post-tail-move occupancy): target cell -> wall? -> eating? -> tail moves for
   non-eating rows -> body collision on the moved grid (following your own tail is legal) -> head is
   written with age = length -> win when ``length == C`` is checked BEFORE food is spawned.
 * Food is drawn uniformly over free cells with masked random scores + argmax (no rejection loop),
-  the numpy form of the Jumanji/mapox spawn.
-* Starvation (``idle > idle_cap``) and the absolute cap (``t >= C*C``) are truncations with reward
-  0, never a death: Gymnasium's terminated/truncated split,
+  the numpy form of Jumanji's ``_sample_fruit_coord``.
+* Starvation (``idle > idle_cap``) and the absolute cap (``t >= C*C``) are truncations that still
+  pay ``r_step`` (never the death penalty): Gymnasium's terminated/truncated split,
   https://gymnasium.farama.org/tutorials/gymnasium_basics/handling_time_limits/
 * Optional potential-based shaping ``gamma*Phi(s') - Phi(s)`` with ``Phi(terminal) = 0`` keeps the
-  optimal policy unchanged (Ng, Harada & Russell 1999, restated in https://arxiv.org/pdf/2501.00989).
+  optimal policy unchanged (Ng, Harada & Russell 1999, https://dl.acm.org/doi/10.5555/645528.657613;
+  ``Phi(terminal) = 0`` for episodic tasks: Grzes 2017, https://dl.acm.org/doi/10.5555/3091125.3091208).
 """
 
 import numpy as np
