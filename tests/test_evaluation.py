@@ -52,7 +52,7 @@ def test_run_phase_writes_summary_and_csv(tmp_path):
     assert (run_dir / "summary.json").exists() and (run_dir / "eval_episodes.csv").exists()
     assert json.loads((run_dir / "summary.json").read_text())["board"] == "2^2"
     assert summary["modes"]["deterministic=True"]["success_rate_mean"] == 1.0
-    assert "evaluating route" in (run_dir / "log.txt").read_text(encoding="utf-8")
+    assert "evaluating route" in (run_dir / "run.log").read_text(encoding="utf-8")
 
 
 def test_unknown_policy_name_fails_fast(tmp_path):

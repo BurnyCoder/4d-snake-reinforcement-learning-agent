@@ -2,7 +2,8 @@
 
 Global context: ``build_model`` turns a ``Config`` into an sb3-contrib ``MaskablePPO`` (shared by
 the benchmark and by ``run``); ``run`` (the ``train`` phase) adds the SB3 logger, the curriculum and
-evaluation callbacks and saves the model.  Design choices are documented in docs/rl_design.md.
+evaluation callbacks, trains for ``total_timesteps`` and saves the model.  Design choices are
+documented in docs/rl_design.md.
 
 Local notes:
 * ``MaskablePPO`` API: https://sb3-contrib.readthedocs.io/en/master/modules/ppo_mask.html
@@ -11,14 +12,31 @@ Local notes:
   https://stable-baselines3.readthedocs.io/en/master/common/utils.html
 * ``torch.set_num_threads``: SB3 maintainers report large CPU speed-ups with one thread for small
   MLPs (https://github.com/DLR-RM/stable-baselines3/issues/121).
+* Logger ``configure(run_dir, ["stdout", "log", "csv", "tensorboard"])`` writes the console
+  tables, ``log.txt``, ``progress.csv`` and TensorBoard events into the run directory:
+  https://stable-baselines3.readthedocs.io/en/master/common/logger.html
+* ``MaskableEvalCallback`` evaluates with masks on the true-start eval env and saves
+  ``best_model.zip`` + ``evaluations.npz``; ``eval_freq``/``save_freq`` are per vec-step, hence the
+  division by ``n_envs`` (https://stable-baselines3.readthedocs.io/en/master/guide/callbacks.html).
 """
+
+import logging
+from pathlib import Path
 
 import torch
 from sb3_contrib import MaskablePPO
+from sb3_contrib.common.maskable.callbacks import MaskableEvalCallback
+from stable_baselines3.common.callbacks import CheckpointCallback
+from stable_baselines3.common.logger import configure
 from stable_baselines3.common.utils import LinearSchedule
 from stable_baselines3.common.vec_env import VecEnv
 
+from snake4d.callbacks import Backplay, FillLogger
 from snake4d.config import Config
+from snake4d.logging_utils import make_run_dir, setup_logging
+from snake4d.vec_env import make_env
+
+log = logging.getLogger("snake4d.train")
 
 
 def build_model(cfg: Config, env: VecEnv, n_steps: int | None = None,
@@ -47,3 +65,50 @@ def build_model(cfg: Config, env: VecEnv, n_steps: int | None = None,
         verbose=verbose,
         tensorboard_log=tensorboard_log,
     )
+
+
+def build_callbacks(cfg: Config, run_dir: Path) -> list:
+    """Fill dashboard, masked evaluation from the true start, checkpoints, optional curriculum."""
+    eval_env = make_env(cfg, cfg.eval_episodes, seed=cfg.seed + 1000)  # never gets the curriculum
+    callbacks = [
+        FillLogger(),
+        MaskableEvalCallback(
+            eval_env,
+            n_eval_episodes=cfg.eval_episodes,
+            eval_freq=max(cfg.eval_every // cfg.n_envs, 1),
+            deterministic=True,
+            log_path=str(run_dir / "eval"),
+            best_model_save_path=str(run_dir),
+            verbose=1,
+        ),
+        CheckpointCallback(
+            save_freq=max(cfg.ckpt_every // cfg.n_envs, 1),
+            save_path=str(run_dir / "checkpoints"),
+            name_prefix="model",
+        ),
+    ]
+    if cfg.curriculum:
+        callbacks.append(Backplay(cfg))
+    return callbacks
+
+
+def run(cfg: Config) -> Path:
+    """Phase entry point: train (or resume from ``model_path``), save ``final_model.zip``."""
+    run_dir = make_run_dir(cfg, "train")
+    logger = setup_logging(run_dir)
+    env = make_env(cfg, cfg.n_envs, seed=cfg.seed, monitor_path=str(run_dir / "monitor"))
+    if cfg.model_path:
+        model = MaskablePPO.load(cfg.model_path, env=env, device=cfg.device)
+        logger.info("resumed %s", cfg.model_path)
+    else:
+        model = build_model(cfg, env)
+    model.set_logger(configure(str(run_dir), ["stdout", "log", "csv", "tensorboard"]))
+    logger.info("training %d^%d (%d cells) for %s steps on %s: n_envs=%d n_steps=%d batch=%d "
+                "curriculum=%d", cfg.size, cfg.ndim, cfg.n_cells, f"{cfg.total_timesteps:,}",
+                model.device, cfg.n_envs, cfg.n_steps, cfg.batch_size, cfg.curriculum)
+    model.learn(total_timesteps=cfg.total_timesteps, callback=build_callbacks(cfg, run_dir),
+                reset_num_timesteps=not cfg.model_path)
+    model.save(run_dir / "final_model")
+    logger.info("saved %s after %s timesteps", run_dir / "final_model.zip",
+                f"{model.num_timesteps:,}")
+    return run_dir

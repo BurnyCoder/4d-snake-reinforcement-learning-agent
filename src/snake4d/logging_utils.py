@@ -1,9 +1,10 @@
 """Timestamped logging and run directories.
 
 Global context: every phase (bench, train, evaluate, report) creates one run directory
-``runs/<YYYYmmdd-HHMMSS>_<phase>_<run_name>/`` holding ``log.txt`` (everything printed, with
-timestamps), ``config.json`` (resolved Config) and ``versions.json`` (library versions, GPU, git
-commit) so any number in a report can be traced back to exact code and settings.
+``runs/<YYYYmmdd-HHMMSS>_<phase>_<run_name>/`` holding ``run.log`` (everything logged, with
+timestamps; SB3's own ``log.txt``/``progress.csv`` live next to it), ``config.json`` (resolved
+Config) and ``versions.json`` (library versions, GPU, git commit) so any number in a report can be
+traced back to exact code and settings.
 
 Local notes: ``logging.basicConfig(force=True, handlers=[...])`` per
 https://docs.python.org/3/library/logging.html#logging.basicConfig - ``force`` removes handlers that
@@ -25,13 +26,13 @@ TRACKED_PACKAGES = ("torch", "gymnasium", "stable-baselines3", "sb3-contrib", "n
 
 
 def setup_logging(run_dir: Path) -> logging.Logger:
-    """Send INFO logs to both ``run_dir/log.txt`` and the terminal, timestamped."""
+    """Send INFO logs to both ``run_dir/run.log`` and the terminal, timestamped."""
     logging.basicConfig(
         level=logging.INFO,
         format=LOG_FORMAT,
         force=True,
         handlers=[
-            logging.FileHandler(Path(run_dir) / "log.txt", encoding="utf-8"),
+            logging.FileHandler(Path(run_dir) / "run.log", encoding="utf-8"),
             logging.StreamHandler(),
         ],
     )
