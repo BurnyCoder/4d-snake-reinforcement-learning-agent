@@ -9,9 +9,8 @@ Local notes:
 * ``sb3_contrib.common.maskable.evaluation.evaluate_policy`` (not SB3's) so action masks are
   applied; it requires a Monitor-wrapped env and reads ``info["episode"]`` at episode end -
   https://github.com/Stable-Baselines-Team/stable-baselines3-contrib/blob/master/sb3_contrib/common/maskable/evaluation.py
-* ``make_vec_env(..., n_envs=eval_episodes)`` runs one episode per env with one batched policy
-  call per step; ``seed`` seeds every sub-env at its first reset -
-  https://stable-baselines3.readthedocs.io/en/master/common/env_util.html
+* The batched ``vec_env.make_env(cfg, n_envs=eval_episodes, seed)`` runs one episode per env with
+  one policy call per step; ``VecMonitor`` supplies ``info["episode"]``.
 * Episode counts and seeds are explicit (100 episodes x 3 seeds), never SB3's defaults of 10/5.
 """
 
@@ -22,32 +21,18 @@ from pathlib import Path
 
 import numpy as np
 from sb3_contrib.common.maskable.evaluation import evaluate_policy
-from stable_baselines3.common.env_util import make_vec_env
-from stable_baselines3.common.vec_env import VecEnv
 
 from snake4d.agents import POLICIES
 from snake4d.config import Config
-from snake4d.env import SnakeEnv
 from snake4d.logging_utils import make_run_dir, setup_logging
+from snake4d.vec_env import make_env
 
-INFO_KEYS = ("is_success", "fill", "start_len")  # Monitor copies these into info["episode"]
 log = logging.getLogger("snake4d.evaluation")
-
-
-def make_eval_env(cfg: Config, n_envs: int, seed: int | None) -> VecEnv:
-    """``n_envs`` Monitor-wrapped SnakeEnvs in a DummyVecEnv, seeded for their first reset."""
-    return make_vec_env(
-        SnakeEnv,
-        n_envs=n_envs,
-        seed=seed,
-        env_kwargs={"cfg": cfg},
-        monitor_kwargs={"info_keywords": INFO_KEYS},
-    )
 
 
 def run_episodes(policy, cfg: Config, seed: int, deterministic: bool) -> list[dict]:
     """One evaluation pass: ``cfg.eval_episodes`` episodes, one per env, as a list of records."""
-    env = make_eval_env(cfg, cfg.eval_episodes, seed)
+    env = make_env(cfg, cfg.eval_episodes, seed)
     policy.set_random_seed(seed)
     episodes: list[dict] = []
 

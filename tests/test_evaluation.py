@@ -7,16 +7,17 @@ from sb3_contrib.common.maskable.utils import is_masking_supported
 
 from snake4d.agents import RandomMaskedPolicy, RoutePolicy
 from snake4d.config import Config
-from snake4d.evaluation import evaluate, make_eval_env, run, summarize
+from snake4d.evaluation import evaluate, run, summarize
+from snake4d.vec_env import make_env
 
 
 def test_eval_env_supports_masking_and_seeds_reset():
     cfg = Config(size=2, ndim=2)
-    env = make_eval_env(cfg, n_envs=3, seed=7)
+    env = make_env(cfg, n_envs=3, seed=7)
     assert is_masking_supported(env)
     first = env.reset()
     assert first.shape == (3, 4 * 4 + 2)
-    again = make_eval_env(cfg, n_envs=3, seed=7).reset()
+    again = make_env(cfg, n_envs=3, seed=7).reset()
     assert (first == again).all()
 
 
