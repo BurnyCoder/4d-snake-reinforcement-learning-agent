@@ -12,7 +12,10 @@ from snake4d.hamilton import check_route, gray_path, ham_cycle, route_actions, r
 )
 def test_route_for_visits_every_cell_with_unit_steps(size, ndim):
     route, closed = route_for(size, ndim)
-    assert len(route) == size**ndim and closed == (size % 2 == 0 and ndim >= 2)
+    assert closed == (ndim >= 2)
+    skips_corner = closed and size % 2 == 1  # odd boards: cycle over every cell but cell 0
+    assert len(route) == size**ndim - int(skips_corner)
+    assert (0 not in route) == skips_corner
     check_route(route, size, ndim, closed)  # raises on any defect
 
 
@@ -40,14 +43,15 @@ def test_check_route_rejects_broken_routes():
         check_route(duplicated, 4, 2, closed)
 
 
-@pytest.mark.parametrize(("size", "ndim"), [(4, 4), (3, 4)])
+@pytest.mark.parametrize(("size", "ndim"), [(4, 4), (3, 4), (5, 1)])
 def test_route_actions_step_along_the_route(size, ndim):
     route, closed = route_for(size, ndim)
     neigh = neighbour_table(size, ndim)
     actions = route_actions(route, closed, neigh)
-    n_cells = size**ndim
-    for k in range(n_cells - (0 if closed else 1)):
-        assert neigh[route[k], actions[route[k]]] == route[(k + 1) % n_cells]
+    n = len(route)
+    for k in range(n - (0 if closed else 1)):
+        assert neigh[route[k], actions[route[k]]] == route[(k + 1) % n]
     if not closed:
         assert actions[route[-1]] == -1
-    assert np.all(actions[route[: n_cells - 1]] >= 0)
+    off_route = np.setdiff1d(np.arange(size**ndim), route)
+    assert np.all(actions[off_route] == -1) and np.all(actions[route[: n - 1]] >= 0)
