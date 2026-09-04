@@ -57,4 +57,4 @@ def test_headless_window_loop(tmp_path):
     pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_ESCAPE))
     session = play.run(cfg, max_frames=5)
     assert session.steps == 0
-    assert "play 3^4" in (next(tmp_path.iterdir()) / "log.txt").read_text(encoding="utf-8")
+    assert "play 3^4" in (next(tmp_path.iterdir()) / "run.log").read_text(encoding="utf-8")
