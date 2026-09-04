@@ -36,8 +36,12 @@ def pipeline(cfg: Config) -> None:
         resolve(PHASES[name])(cfg)
 
 
-def main(argv: list[str] | None = None) -> object:
-    """Parse the command line, build the Config and dispatch to the requested phase."""
+def main(argv: list[str] | None = None) -> None:
+    """Parse the command line, build the Config and dispatch to the requested phase.
+
+    Returns ``None`` on purpose: the console script runs ``sys.exit(main())`` and a non-None
+    return value would become a failing exit status (https://docs.python.org/3/library/sys.html#sys.exit).
+    """
     parser = argparse.ArgumentParser(prog="snake4d", description=__doc__.splitlines()[0])
     parser.add_argument("phase", choices=PHASES)
     parser.add_argument("--env-file", help="experiment overrides, e.g. experiments/exp02.env")
@@ -47,7 +51,10 @@ def main(argv: list[str] | None = None) -> object:
     args = parser.parse_args(argv)
     cfg = Config.from_env(args.env_file, tuple(args.set))
     phase = resolve(PHASES[args.phase])
-    return phase(cfg, pdf=True) if args.phase == "report" and args.pdf else phase(cfg)
+    if args.phase == "report" and args.pdf:
+        phase(cfg, pdf=True)
+    else:
+        phase(cfg)
 
 
 if __name__ == "__main__":  # `uv run python -m snake4d.main train`
