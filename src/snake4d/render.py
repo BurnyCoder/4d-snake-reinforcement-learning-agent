@@ -1,10 +1,11 @@
 """Rendering an N-dimensional board for humans: a 2D montage of 2D slices.
 
-Global context: used by ``SnakeEnv.render`` (ansi / rgb_array), the pygame window in ``play.py``
-and report figures.  The 4D board ``(x, y, z, w)`` becomes a ``z``-by-``w`` grid of ``x``-by-``y``
+Global context: used by ``SnakeEnv.render`` (ansi / rgb_array) and the pygame window in
+``play.py``.  The 4D board ``(x, y, z, w)`` becomes a ``z``-by-``w`` grid of ``x``-by-``y``
 tiles - the layout of the 4D minesweeper by Checkmate6659 ("a 2D grid of 2D layers"); 4D->3D
-perspective projections are deliberately avoided (eugeneko/Snake4D's README says its projected
-board becomes unplayable beyond a certain snake length, https://github.com/eugeneko/Snake4D).
+perspective projections are deliberately avoided (the author of the projected 4D snake
+eugeneko/Snake4D reports being unable to play it beyond a certain snake length,
+https://github.com/eugeneko/Snake4D).
 
 Local notes: the montage is one numpy transpose+reshape
 (https://numpy.org/doc/stable/reference/generated/numpy.transpose.html); the index identity

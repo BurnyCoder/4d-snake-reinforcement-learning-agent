@@ -35,7 +35,8 @@
 Truncations are not deaths: SB3 bootstraps the value of the last state for them
 (`TimeLimit.truncated`), following Gymnasium's terminated/truncated semantics
 (https://gymnasium.farama.org/tutorials/gymnasium_basics/handling_time_limits/). Every step also
-pays `r_step = -0.001` (except the winning step), which makes wandering forever worse than
+pays `r_step = -0.001` on every non-terminal step (the winning and the fatal step do not), which
+makes wandering forever worse than
 finishing; `Config` checks `|r_step| / (1 - gamma) < |r_death|` so dying never beats living.
 
 Optional potential-based shaping (`SNAKE_SHAPING_COEF > 0`) adds
@@ -74,10 +75,11 @@ The grid graph is bipartite (cells coloured by coordinate-sum parity;
 https://mathworld.wolfram.com/GridGraph.html). A Hamiltonian cycle alternates colours, so it
 needs equal colour classes, hence an even number of cells:
 
-- `4^4 = 256` splits 128/128 and has a Hamiltonian cycle (every rectangular grid graph with an
-  even number of cells has one: Itai, Papadimitriou and Szwarcfiter 1982,
-  https://doi.org/10.1137/0211056; `hamilton.ham_cycle` builds the 2D cycle and lifts it
-  dimension by dimension, `check_route` verifies the result). Following it fills the board
+- `4^4 = 256` splits 128/128 and has a Hamiltonian cycle: a 2D grid graph with both sides >= 2
+  is Hamiltonian when one side is even (Skiena 1990, p. 148, via https://mathworld.wolfram.com/GridGraph.html),
+  and the even cell count is necessary because grid graphs are bipartite (Itai, Papadimitriou
+  and Szwarcfiter 1982, https://doi.org/10.1137/0211056); `hamilton.ham_cycle` builds the 2D
+  cycle and lifts it dimension by dimension - our own construction, which `check_route` verifies. Following it fills the board
   every time (`RoutePolicy`), which is the completability proof and the step-count ceiling.
 - `3^4 = 81` splits 41/40: no Hamiltonian cycle exists, and a snake filling the board must end with
   its body as a Hamiltonian path whose ends both lie in the 41-cell class. The scripted baseline

@@ -14,7 +14,8 @@ Local notes:
 * On odd boards the route is a cycle over every cell but the corner (``hamilton``).  The follower
   enters the corner only when the food is there and the skipped arc of the cycle up to the exit
   cell is free, so the head can never run into its own tail (the perturbed-Hamiltonian-cycle
-  rule "the head must never overtake the tail" from johnflux's Nokia-snake write-up,
+  rule "any shortcut must result in the head not overtaking the tail", johnflux's Nokia-snake
+  write-up,
   https://johnflux.com/2015/05/02/nokia-6110-part-3-algorithms/, applied to a one-cell detour).
 """
 

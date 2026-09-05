@@ -4,7 +4,8 @@ Global context: every user-facing action is a *phase* implemented as ``run(cfg: 
 module.  This file only parses the command line, builds the Config (defaults -> .env -> experiment
 env file -> --set) and calls the phase; all real work and all logging happen inside the phases.
 
-Local notes: phases are resolved lazily by import path so that e.g. ``play`` never imports torch and
+Local notes: phases are resolved lazily by import path so that e.g. ``play`` never requires torch
+(``logging_utils.versions`` imports it defensively, only to record the CUDA device) and
 ``train`` never imports pygame (https://docs.python.org/3/library/importlib.html#importlib.import_module).
 """
 

@@ -101,8 +101,8 @@ def run(cfg: Config) -> Path:
     env = make_env(cfg, cfg.n_envs, seed=cfg.seed, monitor_path=str(run_dir / "monitor"))
     if cfg.model_path:
         # custom_objects overrides what the checkpoint stored for exactly these keys (both
-        # schedules, ent_coef, gamma, target_kl and the rollout shape); gae_lambda, vf_coef,
-        # max_grad_norm, the network shape and the seed keep the checkpoint's values:
+        # schedules, ent_coef, gamma, target_kl, n_epochs and the rollout shape); gae_lambda,
+        # vf_coef, max_grad_norm, the network shape and the seed keep the checkpoint's values:
         # https://stable-baselines3.readthedocs.io/en/master/guide/save_format.html
         torch.set_num_threads(cfg.torch_threads)
         model = MaskablePPO.load(cfg.model_path, env=env, device=cfg.device, custom_objects={
@@ -111,7 +111,9 @@ def run(cfg: Config) -> Path:
             "ent_coef": cfg.ent_coef, "gamma": cfg.gamma, "target_kl": cfg.target_kl,
             "n_steps": cfg.n_steps, "batch_size": cfg.batch_size, "n_epochs": cfg.n_epochs,
         })
-        logger.info("resumed %s with this run's schedules and hyper-parameters", cfg.model_path)
+        logger.info("resumed %s: this run's schedules, ent_coef, gamma, target_kl, n_epochs and"
+                    " rollout shape override the checkpoint; gae_lambda, vf_coef, max_grad_norm,"
+                    " net width and seed keep its values", cfg.model_path)
     else:
         model = build_model(cfg, env)
     model.set_logger(configure(str(run_dir), ["stdout", "log", "csv", "tensorboard"]))

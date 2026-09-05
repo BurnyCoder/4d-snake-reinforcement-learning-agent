@@ -2,8 +2,8 @@
 
 Global context: the headline numbers of every report come from here - ``success_rate`` (board
 filled within the episode caps), mean ``fill`` and steps-to-complete - for scripted baselines
-(``agents.py``) and saved MaskablePPO models alike.  ``train.py`` reuses ``make_eval_env`` for its
-in-training evaluation callback.
+(``agents.py``) and saved MaskablePPO models alike.  ``train.py`` reuses the same
+``vec_env.make_env`` factory for its in-training evaluation callback.
 
 Local notes:
 * ``sb3_contrib.common.maskable.evaluation.evaluate_policy`` (not SB3's) so action masks are

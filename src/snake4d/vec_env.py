@@ -3,7 +3,7 @@
 Global context: PPO throughput on a cheap environment is dominated by per-env Python overhead and
 inter-process communication: SB3 docs on DummyVecEnv vs SubprocVecEnv,
 https://stable-baselines3.readthedocs.io/en/master/guide/vec_envs.html
-and the Gymnasium paper's Fig. 1 (custom numpy vectorisation beats both),
+and the Gymnasium paper's Fig. 3 in v4, Fig. 1 in v2 (custom numpy vectorisation beats both),
 https://arxiv.org/abs/2407.17032.  ``SnakeVecEnv`` therefore steps ``N`` boards with the
 vectorised numpy rules of ``physics.py`` inside a single process; ``make_env`` wraps it in SB3's
 ``VecMonitor`` so episode statistics come from library code.  Evaluation and the training callback

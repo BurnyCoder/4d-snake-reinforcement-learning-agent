@@ -10,7 +10,8 @@ Local notes:
   tail is "decrement every positive age"; collision is "age at the target cell > 0".  This is the
   ``body_state`` / ``norm_body_state`` representation of Jumanji's snake (Apache-2.0,
   https://github.com/instadeepai/jumanji/blob/main/jumanji/environments/routing/snake/env.py;
-  oscarknagg/wurm describes the same encoding), re-expressed in numpy over a batch of boards.
+  oscarknagg/wurm's single_snake.py implements the same encoding), re-expressed in numpy over a
+  batch of boards.
 * Order of one step (post-tail-move occupancy): target cell -> wall? -> eating? -> tail moves for
   non-eating rows -> body collision on the moved grid (following your own tail is legal) -> head is
   written with age = length -> win when ``length == C`` is checked BEFORE food is spawned.
