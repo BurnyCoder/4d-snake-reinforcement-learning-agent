@@ -53,7 +53,7 @@ def versions() -> dict[str, str]:
     except OSError:  # git not installed / not on PATH must not stop a run
         info["git_commit"] = "unknown"
     try:
-        import torch  # imported lazily so phases without torch (play) stay light
+        import torch  # imported lazily and defensively so phases still run where torch is absent
 
         info["cuda_device"] = (
             torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu"

@@ -32,7 +32,7 @@ far too small for a 1026-dimensional input.
 | learning rate | linear 3e-4 -> 1e-5 | decaying LR + decaying clip range (below) is what lets the reference agent sharpen into near-deterministic endgame play |
 | `clip_range` | linear 0.2 -> 0.05 | same |
 | `ent_coef` | 0.01 | with heavy masking the entropy collapses fast; keep exploring |
-| `target_kl` | 0.03 | early stopping of the update on approximate KL (Schulman et al. 2017, https://arxiv.org/abs/1707.06347; SB3 `target_kl`), a guard against late blow-ups under the decaying clip schedule |
+| `target_kl` | 0.03 | a KL target as in Schulman et al. 2017 (https://arxiv.org/abs/1707.06347, adaptive-KL penalty); SB3's `target_kl` implements it as early stopping of the update (https://stable-baselines3.readthedocs.io/en/master/modules/ppo.html#parameters), a guard against late blow-ups under the decaying clip schedule |
 | `vf_coef`, `max_grad_norm` | 0.5, 0.5 | SB3 defaults (https://stable-baselines3.readthedocs.io/en/master/modules/ppo.html#parameters) |
 
 Schedules use SB3's `LinearSchedule(start, end, 1.0)` (`get_linear_fn` is deprecated since SB3

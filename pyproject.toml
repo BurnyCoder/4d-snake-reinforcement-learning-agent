@@ -48,7 +48,8 @@ docs = [
 # Bind torch to the explicit CUDA 13.0 index: the PyPI Windows wheel is CPU-only
 # (https://docs.astral.sh/uv/guides/integration/pytorch/); Blackwell (sm_120) needs a CUDA 12.8+ build,
 # first shipped in torch 2.7 (https://github.com/pytorch/pytorch/releases/tag/v2.7.0), and the cu128 index
-# stops at torch 2.11 (https://github.com/pytorch/pytorch/issues/164342) while cu130 carries 2.14.
+# stops at torch 2.11 (https://download.pytorch.org/whl/cu128/torch/) while cu130 carries 2.14
+# (https://download.pytorch.org/whl/cu130/torch/).
 [tool.uv.sources]
 torch = [
     { index = "pytorch-cu130", marker = "sys_platform == 'win32' or sys_platform == 'linux'" },

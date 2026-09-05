@@ -22,7 +22,7 @@ from 255 to 199 cells and then collapses, reaching 40 % fill from the true start
 66 %) and zero completions. We attribute the collapse to schedules tied to the total budget rather
 than to curriculum progress, and to the lack of transfer from cycle-shaped starts to true starts.
 Behaviour-cloning the same network on 262k route-follower decisions spread over all fill levels
-(about ten seconds of supervised training) yields a neural policy that completes the full 4^4 board in
+(about twelve seconds of supervised training) yields a neural policy that completes the full 4^4 board in
 100 % of deterministic evaluation episodes (3 seeds x 100), at the follower's 16,448 steps; PPO
 fine-tuning of this clone is the route to a faster learned completer.
 
@@ -30,8 +30,8 @@ fine-tuning of this clone is the route to a faster learned completer.
 
 Snake is a coverage problem in disguise: to win, the body must at the end form a Hamiltonian path
 of the grid, and every intermediate state must keep such a path reachable. In four dimensions the
-grid graph has degree 8, the intuition of "corners" disappears, and a projected 4D board stops
-being playable by a human beyond a certain snake length (eugeneko/Snake4D's own README). This project asks whether a model-free policy can learn to complete the 4D
+grid graph has degree 8, the intuition of "corners" disappears, and the author of the projected
+4D snake eugeneko/Snake4D reports being unable to play it beyond a certain snake length. This project asks whether a model-free policy can learn to complete the 4D
 board, and builds the full pipeline needed to answer it: game, human play, scripted baselines,
 batched training, evaluation protocol and reports.
 
@@ -39,23 +39,26 @@ batched training, evaluation protocol and reports.
 
 - **Masked PPO for snake.** linyiLYi/snake-ai fills a 12x12 board with MaskablePPO, a body
   gradient in the observation, and decaying learning rate and clip range; we adopt the masking,
-  the body-age channel and the schedules, but not its raw distance bonus.
+  the body-age channel and the schedules, but not its distance-based progress bonus.
 - **Invalid-action masking.** Huang and Ontanon (2020) justify masking theoretically and show its
   value grows with the number of invalid actions - eight moves in 4D make it essential.
 - **Reverse curricula.** Backplay (Resnick et al. 2018) starts near the end of a demonstration and
   moves the start backwards; Salimans and Chen (2018) gate the move on the success rate. Our
   demonstration is a Hamiltonian route rather than a human trajectory.
 - **Hamiltonian-cycle agents.** twanvl/snake benchmarks cycle followers and perturbed cycles
-  (0 % losses); the perturbed-cycle rule that the head must never overtake the tail is from
-  johnflux's Nokia-snake write-up (2015). Every rectangular grid graph with an even number of
-  cells has a Hamiltonian cycle (Itai, Papadimitriou and Szwarcfiter 1982); `hamilton.ham_cycle`
+  (0 % losses); the perturbed-cycle rule "any shortcut must result in the head not overtaking
+  the tail" is from johnflux's Nokia-snake write-up (2015). A 2D grid graph with both sides >= 2
+  is Hamiltonian when one side is even (Skiena 1990, via MathWorld), and an even cell count is
+  necessary because grid graphs are bipartite (Itai, Papadimitriou and Szwarcfiter 1982, who also
+  show the Hamilton-cycle problem NP-complete for general grid graphs); `hamilton.ham_cycle`
   lifts a 2D cycle to d dimensions and verifies the result, and the odd-board cycle over all
   cells but a corner is our own construction, also verified.
 - **Imitation.** Behaviour cloning (Pomerleau 1988) learns the expert's action from the
   observation; its covariate-shift failure mode and the DAgger remedy are due to Ross, Gordon
   and Bagnell (2011).
 - **AlphaSnake** (Du et al. 2022) is, by its authors' account, the first published learned agent
-  with a >50 % win rate on a 10x10 board, using MCTS; it frames snake as a Hamiltonian-cycle problem exactly as we do.
+  with a >50 % win rate on a 10x10 board, using MCTS; it uses the Hamiltonian-cycle strategy as
+  its scripted baseline, as we do.
 - **Shaping.** Ng, Harada and Russell (1999): potential-based shaping is the only shaping that
   cannot change the optimal policy; we keep it available but off.
 
@@ -119,7 +122,7 @@ setup -> results -> learnings:
   (`reports/experiments/exp03_ppo_3x4.md`).
 - exp04 - 4^4 (256 cells): Backplay (gate 0.8, window 16, step 8) for 100M steps / 54 min:
   seven frontier advances (255 -> 199) between 18.6M and 53.7M steps, none in the remaining
-  46M, and the curriculum success rate fell to 0 from about 75M steps as the learning rate,
+  46M, and the curriculum success rate fell to 0 from about 73M steps as the learning rate,
   clip range and entropy decayed towards their end values; true-start fill 0.40 (best episode
   0.66), completion 0.000 (`reports/experiments/exp04_ppo_4x4.md`, `reports/data/exp04_ppo_4x4*/`).
 - exp05 - 4^4 imitation warm start: behaviour cloning of the route follower reaches 1.000
@@ -143,9 +146,9 @@ global-planning constraint that a one-hot MLP learns only partially from termina
 
 On 81 and 256 cells the same recipe fails, for two identifiable reasons. First, the curriculum's
 starting states - snakes laid along the Hamiltonian cycle - are not states the true-start policy
-ever reaches (the distribution shift inherent to reverse curricula, Florensa et al. 2017), so
-skill on curriculum starts (0.88-0.9 fill, 60-85 % endgame success) did not transfer to the true
-start (0.4-0.55 fill). Second, the learning-rate, clip-range and entropy schedules
+ever reaches (cf. Florensa et al. 2017, who adapt the start distribution to the agent's
+performance), so skill on curriculum starts (0.88-0.99 fill; 60-84 % success at each gate
+crossing before the collapse) did not transfer to the true start (0.4-0.55 fill). Second, the learning-rate, clip-range and entropy schedules
 decay with the total budget, not with curriculum progress, so the 4^4 agent lost the ability to
 adapt exactly when the frontier reached the hardest states and its endgame success fell to zero.
 The odd 3^4 board adds the parity constraint and a two-step corner detour that was never learned.
@@ -177,6 +180,7 @@ and PPO fine-tuning from that clone is the path to a faster learned completer.
 - Ng, A., Harada, D. and Russell, S. (1999). Policy Invariance Under Reward Transformations: Theory and Application to Reward Shaping. ICML, 278-287. https://dl.acm.org/doi/10.5555/645528.657613
 - Grzes, M. (2017). Reward Shaping in Episodic Reinforcement Learning. AAMAS. https://dl.acm.org/doi/10.5555/3091125.3091208
 - Itai, A., Papadimitriou, C. H. and Szwarcfiter, J. L. (1982). Hamilton Paths in Grid Graphs. SIAM J. Comput. 11(4), 676-686. https://doi.org/10.1137/0211056
+- Skiena, S. (1990). Implementing Discrete Mathematics: Combinatorics and Graph Theory with Mathematica. Addison-Wesley, p. 148 (as cited by MathWorld, https://mathworld.wolfram.com/GridGraph.html).
 - Du, Y. et al. (2022). AlphaSnake: Policy Iteration on a Nondeterministic NP-hard Markov Decision Process. arXiv:2211.09622.
 - Andrychowicz, M. et al. (2020). What Matters in On-Policy Reinforcement Learning? arXiv:2006.05990.
 - Raffin, A. et al. (2021). Stable-Baselines3: Reliable Reinforcement Learning Implementations. JMLR 22(268), 1-8. https://jmlr.org/papers/v22/20-1364.html
@@ -184,7 +188,7 @@ and PPO fine-tuning from that clone is the path to a faster learned completer.
 - Towers, M. et al. (2024). Gymnasium: A Standard Interface for Reinforcement Learning Environments. arXiv:2407.17032.
 - Pomerleau, D. A. (1988). ALVINN: An Autonomous Land Vehicle in a Neural Network. NeurIPS. https://proceedings.neurips.cc/paper/1988/hash/812b4ba287f5ee0bc9d43bbf5bbe87fb-Abstract.html
 - Ross, S., Gordon, G. and Bagnell, D. (2011). A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning (DAgger). AISTATS. arXiv:1011.0686.
-- Muller, R., Kornblith, S. and Hinton, G. (2019). When Does Label Smoothing Help? NeurIPS. arXiv:1906.02629.
+- Müller, R., Kornblith, S. and Hinton, G. (2019). When Does Label Smoothing Help? NeurIPS. arXiv:1906.02629.
 - Florensa, C. et al. (2017). Reverse Curriculum Generation for Reinforcement Learning. CoRL. arXiv:1707.05300.
 - Silver, D. et al. (2017). Mastering Chess and Shogi by Self-Play with a General Reinforcement Learning Algorithm. arXiv:1712.01815.
 - Sutton, R. S. and Barto, A. G. (2018). Reinforcement Learning: An Introduction (2nd ed.). MIT Press. http://incompleteideas.net/book/the-book-2nd.html

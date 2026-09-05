@@ -8,11 +8,12 @@ Local notes:
 * ``gray_path`` is the reflected n-ary Gray code (boustrophedon): consecutive words differ by +-1
   in one digit, i.e. one grid edge - https://en.wikipedia.org/wiki/Gray_code (validated against
   the ternary example ``00 01 02 12 11 10 20 21 22``).  Works for every size and dimension.
-* ``ham_cycle`` needs an even size (bipartite parity, see ``grid.parity_split``): a rectangular
-  grid graph has a Hamiltonian cycle iff its cell count is even and both sides are >= 2
-  (Itai, Papadimitriou & Szwarcfiter 1982, https://doi.org/10.1137/0211056;
-  https://mathworld.wolfram.com/GridGraph.html).  The recursive fibre construction below lifts
-  the 2D cycle to higher dimensions; it is our own, so ``check_route`` asserts every property.
+* ``ham_cycle`` needs an even size: a 2D grid graph with both sides >= 2 is Hamiltonian when one
+  side is even (Skiena 1990, via https://mathworld.wolfram.com/GridGraph.html), and an even
+  cell count is necessary because grid graphs are bipartite (see ``grid.parity_split``; Itai,
+  Papadimitriou & Szwarcfiter 1982, https://doi.org/10.1137/0211056).  The recursive fibre
+  construction below lifts the 2D cycle to higher dimensions; it is our own, so
+  ``check_route`` asserts every property.
 * Odd sizes have no Hamiltonian cycle (odd cell count), but the board minus the corner
   ``(0, ..., 0)`` has an even count and ``cycle_minus_corner`` builds one: an explicit 2D
   construction, then per extra dimension the same fibre sweep with the corner's own column

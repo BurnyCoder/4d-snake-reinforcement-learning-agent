@@ -47,7 +47,7 @@ git clone https://github.com/BurnyCoder/4d-snake-rl.git
 cd 4d-snake-rl
 uv sync --all-groups          # creates .venv with torch 2.14 (CUDA 13.0 wheels), SB3 2.9, gymnasium 1.3, ...
 cp .env.example .env          # optional: edit any SNAKE_* key (all keys are documented there)
-uv run pytest -m "not slow and not gpu"   # fast suite, about a minute; run -m gpu for the CUDA smoke test
+uv run pytest -m "not slow and not gpu"   # fast suite, about 20 s; run -m gpu for the CUDA smoke test
 ```
 
 Every setting is a `SNAKE_<FIELD>` key of [src/snake4d/config.py](src/snake4d/config.py):
@@ -94,6 +94,7 @@ flowchart LR
     subgraph cli [CLI]
         main[main.py: phases bench / play / train / imitate / evaluate / report / pipeline]
         config[config.py: Config from defaults, .env, --env-file, --set]
+        logging[logging_utils.py: run dirs, run.log, versions.json]
     end
     subgraph core [Game core]
         grid[grid.py: neighbour table, parity]
@@ -119,7 +120,12 @@ flowchart LR
     end
     main --> config
     main --> train & evaluation & bench & play & report & imitation
+    logging --> train & evaluation & bench & play & report & imitation
     agents --> imitation --> runs
+    train --> imitation
+    vec --> imitation
+    env --> bench
+    train --> bench
     grid --> physics
     hamilton --> physics
     physics --> env & vec
@@ -154,7 +160,7 @@ each experiment's write-up is under [reports/experiments/](reports/experiments/)
 Model-free PPO with a reverse curriculum completes the smallest 4D board but not the 81- or
 256-cell boards ([exp04](reports/experiments/exp04_ppo_4x4.md) analyses why: schedules tied to
 the step budget instead of curriculum progress, no transfer from cycle-shaped starts). Cloning
-the same network on the scripted Hamiltonian follower's decisions (`snake4d imitate`, about ten
+the same network on the scripted Hamiltonian follower's decisions (`snake4d imitate`, about twelve
 seconds)
 yields a neural policy that completes the full 4^4 board every time; PPO then only has to make it
 faster. Throughput on this laptop: 33k PPO steps/s (4096 batched envs on CUDA,

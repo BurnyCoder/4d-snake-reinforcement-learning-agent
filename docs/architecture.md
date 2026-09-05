@@ -47,8 +47,9 @@ auto-resetting finished rows with `terminal_observation` and `TimeLimit.truncate
 | `pipeline` | `main.py` | Config | train -> evaluate -> report |
 
 `main.py` builds one `Config` (defaults -> `.env` -> `--env-file` -> `--set`) and calls the phase's
-`run(cfg)`. Phases import each other's modules lazily so `play` never imports torch and `train`
-never imports pygame.
+`run(cfg)`. Phases import each other's modules lazily so `play` never requires torch (it is
+imported defensively once, to record the CUDA device in `versions.json`) and `train` never
+imports pygame.
 
 ## Data flow of a training step
 

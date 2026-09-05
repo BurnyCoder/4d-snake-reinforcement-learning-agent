@@ -22,7 +22,8 @@ random legal play is the floor.
 
 ## Setup
 
-100 episodes x 3 seeds per policy and board, deterministic policies, the evaluation protocol of
+100 episodes x 3 seeds per policy and board, a single `deterministic=True` pass (the random
+baseline still samples its actions), the evaluation protocol of
 docs/evaluation.md (masked `evaluate_policy`, one batched env per episode, explicit seeds).
 
 ## Results
@@ -44,7 +45,7 @@ docs/evaluation.md (masked `evaluate_policy`, one batched env per episode, expli
   fewer than ~16k steps.
 - H2 confirmed only after a fix. The first version of the route follower used the reflected
   Gray-code *path* on odd boards and reached only about 4 % fill on 3^4 (run not archived; that
-  follower was removed in PR #6, commit f3b68d7) - worse than random play at 22 %: an open path has a dead end, so the head reaches the end, has to leave the route, and then
+  follower was removed in PR #6, commit f3b68d7) - worse than random play at 23 %: an open path has a dead end, so the head reaches the end, has to leave the route, and then
   keeps colliding with its own body near the end. The fix (`hamilton.cycle_minus_corner`) builds a
   Hamiltonian cycle over the 80 cells other than the corner - an explicit 2D construction plus a
   "ladder" splice of the corner's column into a neighbouring column for each extra dimension -

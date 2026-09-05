@@ -5,8 +5,9 @@ DummyVecEnv/SubprocVecEnv on Windows, so the architecture decision (single-proce
 and every training budget are justified by numbers measured here and written to
 ``runs/<ts>_bench_*/benchmark.json`` and, generated from it, ``docs/benchmark.md``.
 
-Local notes: rows = {batched SnakeVecEnv at several N} x {DummyVecEnv(16), SubprocVecEnv(16)} x
-device x torch threads, followed by a minibatch-size sweep on the best row (``bench_batch_sizes``).
+Local notes: rows = ({batched SnakeVecEnv at 256/1024/4096} + {DummyVecEnv(16),
+SubprocVecEnv(16)}) x device x torch threads, followed by a minibatch-size sweep on the best
+row (``bench_batch_sizes``).
 PPO fps = ``model.num_timesteps / wall time`` of ``learn()`` (SB3's own ``time/fps`` is cumulative
 and would double count when averaged).  SubprocVecEnv needs the ``if __name__ == "__main__"``
 guard on Windows (spawn), which the console script provides.  ``docs/benchmark.md`` is written
@@ -87,7 +88,8 @@ def ppo_fps(cfg: Config, row: dict, device: str, threads: int, timesteps: int,
 
 
 def recommend(results: list[dict]) -> dict:
-    """Best row -> N_ENVS/DEVICE/TORCH_THREADS; eval cadence ~ one evaluation per 10 min."""
+    """Best row -> N_ENVS/N_STEPS/DEVICE/TORCH_THREADS; EVAL_EVERY ~ one evaluation per 10 min,
+    CKPT_EVERY = 4x that."""
     successful = [r for r in results if "fps" in r]
     if not successful:  # every row failed: keep the measurements, recommend nothing
         return {"best_row": None}

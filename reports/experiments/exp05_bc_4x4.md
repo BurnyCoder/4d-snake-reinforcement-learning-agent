@@ -26,8 +26,8 @@ steps per game?
   spread uniformly over every snake length via curriculum-style resets along the cycle
   (`p_true_start = 0.2`), expert = `RoutePolicy` (Hamiltonian cycle follower).
 - Cloning: negative log-likelihood of the expert action under the masked policy distribution,
-  Adam lr 1e-3, minibatch 8192, 20 epochs; the value head is untouched. Wall time 9 s for the 20 epochs (12 s including data
-  collection; `run.log`).
+  Adam lr 1e-3, minibatch 8192, 20 epochs; the value head is untouched. Wall time about 12 s for the model build plus the 20 epochs, about
+  17 s including expert-data collection (`run.log`).
 - Evaluation: docs/evaluation.md protocol, 100 episodes x 3 seeds, deterministic and stochastic.
 
 ## Results
@@ -37,7 +37,7 @@ steps per game?
 | behaviour-cloned network (exp05) | **1.000 +- 0.000** | 0.787 +- 0.041 | 1.000 / 0.901 | 16,448 |
 | clone + PPO fine-tuning, best checkpoint (exp05b) | **1.000 +- 0.000** | 0.763 +- 0.017 | 1.000 / 0.884 | 16,414 |
 | route follower (exp01, scripted) | 1.000 | - | 1.000 | 16,448 |
-| PPO + Backplay from scratch (exp04, 100M steps) | 0.000 | 0.000 | 0.401 / 0.394 | - |
+| PPO + Backplay from scratch (exp04, 100M steps) | 0.000 | 0.000 | 0.401 / 0.395 | - |
 
 Expert-action accuracy after cloning: 1.000 (loss 2e-4 after 20 epochs).
 
@@ -57,7 +57,7 @@ sampled action equals the argmax, the advantage estimates carry no information a
 moves, and with `ent_coef = 0` there is no force widening the distribution: PPO's update is
 negligible (approx_kl below 2e-5). Fine-tuning a near-deterministic clone needs exploration on
 purpose - an entropy bonus or a temperature on the cloned logits, or a less over-fitted clone
-(early stopping, label smoothing: Muller, Kornblith and Hinton 2019,
+(early stopping, label smoothing: Müller, Kornblith and Hinton 2019,
 https://arxiv.org/abs/1906.02629; or DAgger-style data aggregation: Ross, Gordon and Bagnell
 2011, https://arxiv.org/abs/1011.0686) - which is the next experiment.
 
@@ -76,7 +76,7 @@ https://arxiv.org/abs/1906.02629; or DAgger-style data aggregation: Ross, Gordon
   *all* fill levels at once (uniform-length starts) with a dense supervised signal, so there is no
   frontier to advance and no distribution shift between "curriculum starts" and "true starts" -
   the true-start trajectory of the cycle follower is itself made of those states.
-- Cost: about ten seconds of cloning versus 54 minutes of PPO in exp04; the expert is free because the
+- Cost: about twelve seconds of cloning versus 54 minutes of PPO in exp04; the expert is free because the
   route follower runs inside the batched env.
 
 ## Decisions

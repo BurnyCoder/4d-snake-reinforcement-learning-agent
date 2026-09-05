@@ -22,7 +22,7 @@ positive once the frontier passes roughly half the board.
 | metric | value |
 |---|---|
 | curriculum frontier | 255 -> 247 (18.6M steps, 9.1 min) -> 239 (22.3M) -> 231 (22.5M) -> 223 (40.6M) -> 215 (46.4M) -> 207 (46.9M) -> 199 (53.7M, 27.1 min); no advance in the remaining 46.4M steps (`run.log`, `progress.csv`) |
-| curriculum-start success at frontier 199 | 0.81 at the advance (53.7M), 0.60 at 56.1M, **0.00 from ~75M to 100M steps** |
+| curriculum-start success at frontier 199 | 0.81 at the advance (53.7M), 0.60 at 56.1M, **0.00 from ~73M to 100M steps** |
 | rollout fill (all starts) | 0.81 at 26M, falling to 0.71 at 100M |
 | true-start fill (training) | mean 0.377, best episode 0.660 (169/256 cells); 81,995 true-start episodes of 624 steps on average (`episodes.json`) |
 | true-start completion (eval, 47 evaluations of 100 episodes) | 0.000 throughout |
@@ -48,7 +48,7 @@ Figures: `reports/figures/exp04_ppo_4x4_curves.png`, `exp04_ppo_4x4_fill_hist.pn
   produces, and the true-start episodes (20 % of resets) learned no faster than plain PPO did on
   the smaller boards.
 - **What the agent did learn**: from length 1 it eats about 100 cells (eval fill 0.40) before
-  colliding - 5.2x the random floor (0.077) - in episodes of roughly 570-620 steps (evaluation
+  colliding - 5.2x the random floor (0.077) - in episodes of roughly 570-630 steps (evaluation
   566, training 624), i.e. it learned greedy, mostly safe foraging, not the long-horizon coverage
   strategy.
 
