@@ -1,7 +1,7 @@
 # Experiment 00 - Throughput benchmark (which environment/device configuration to train with)
 
 Date: 2026-09-05 (re-measured with the minibatch sweep built into `snake4d bench`; the first grid
-of 2026-09-04 gave the same ordering). Command: `uv run snake4d bench --set batch_size=2048
+of 2026-09-04, not archived, put the batched env first by the same wide margin). Command: `uv run snake4d bench --set batch_size=2048
 --set run_name=exp00_benchmark` (run `20260905-010410_bench_exp00_benchmark`). Every number below is read from
 [reports/data/exp00_benchmark/benchmark.json](../data/exp00_benchmark/benchmark.json); the table
 [docs/benchmark.md](../../docs/benchmark.md) is generated from the same file.
@@ -20,7 +20,7 @@ The research brief predicted, but could not cite a measurement for, the ordering
 batched single-process env >> DummyVecEnv >> SubprocVecEnv for a cheap environment like snake:
 per-env Python overhead dominates single envs and inter-process communication dominates
 subprocesses (SB3 docs on `SubprocVecEnv`,
-https://stable-baselines3.readthedocs.io/en/master/guide/vec_envs.html; Gymnasium paper Fig. 1,
+https://stable-baselines3.readthedocs.io/en/master/guide/vec_envs.html; Gymnasium paper Fig. 3 in v4 (Fig. 1 in v2),
 https://arxiv.org/abs/2407.17032; openai/baselines#608, https://github.com/openai/baselines/issues/608).
 
 ## Setup
@@ -65,7 +65,7 @@ Minibatch sweep on the best row: batch 2048 -> 8192 -> 16384 gives 18,735 -> 30,
 - Env-only throughput falls as the batch grows (235k at 256 envs to 126k at 4096)
   because the observation tensor (n_envs x 1026 float32, 16 MB at 4096) is rebuilt every step; the
   cost is memory bandwidth, not the game rules.
-- CPU with one torch thread is slow (2k fps) because the 1026 -> 512 -> 512 forward pass and
+- CPU with one torch thread is slow (1.6k fps) because the 1026 -> 512 -> 512 forward pass and
   the update run single-threaded; 8 threads help 3.7x, the GPU another
   3.4x. Training on CPU is a fallback only.
 - Larger env batches beat smaller ones on cuda (15k -> 20k from 256 to 4096 envs):
