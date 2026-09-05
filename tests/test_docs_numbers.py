@@ -31,10 +31,23 @@ def half_up(value: float) -> int:
     return int(Decimal(str(value)).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
 
 
+def benchmark() -> dict:
+    return json.loads((DATA / "exp00_benchmark" / "benchmark.json").read_text(encoding="utf-8"))
+
+
 def best_ppo_fps() -> int:
-    data = json.loads((DATA / "exp00_benchmark" / "benchmark.json").read_text(encoding="utf-8"))
+    data = benchmark()
     rows = [r for r in data["results"] + data.get("minibatch", []) if "fps" in r]
     return max(r["fps"] for r in rows)
+
+
+def grid_fps(env: str, n_envs: int, device: str, threads: int) -> int:
+    return next(r["fps"] for r in benchmark()["results"]
+                if (r["env"], r["n_envs"], r["device"], r["threads"]) == (env, n_envs, device, threads))
+
+
+def episodes(run: str) -> dict:
+    return json.loads((DATA / run / "episodes.json").read_text(encoding="utf-8"))
 
 
 CASES = {
@@ -64,6 +77,11 @@ CASES = {
     "exp04 fill": ("reports/experiments/exp04_ppo_4x4.md", lambda: f"fill {det('exp04_ppo_4x4_best', 'fill_mean'):.3f} / {stoch('exp04_ppo_4x4_best', 'fill_mean'):.3f}"),
     "exp05 fine-tune": ("reports/experiments/exp05_bc_4x4.md", lambda: f"| **{det('exp05b_ppo_4x4_from_bc_best'):.3f} +- 0.000** | {stoch('exp05b_ppo_4x4_from_bc_best'):.3f}"),
     "exp00 best fps": ("reports/experiments/exp00_benchmark.md", lambda: f"{best_ppo_fps():,}"),
+    "exp00 single-thread cpu": ("reports/experiments/exp00_benchmark.md", lambda: f"| 1 thread: {grid_fps('batched', 4096, 'cpu', 1):,} |"),
+    "exp05 copy of exp04 fills": ("reports/experiments/exp05_bc_4x4.md", lambda: f"| {det('exp04_ppo_4x4_best', 'fill_mean'):.3f} / {stoch('exp04_ppo_4x4_best', 'fill_mean'):.3f} |"),
+    "exp03a true-start fill": ("reports/experiments/exp03_ppo_3x4.md", lambda: f"| 0.000 | {det('exp03a_ppo_3x4_nocur_best', 'fill_mean'):.3f} | {episodes('exp03a_ppo_3x4_nocur')['true_start_fill_mean']:.4f} / {episodes('exp03a_ppo_3x4_nocur')['true_start_fill_max']:.3f}"),
+    "exp03b true-start fill": ("reports/experiments/exp03_ppo_3x4.md", lambda: f"| 0.000 | {det('exp03b_ppo_3x4_backplay_best', 'fill_mean'):.3f} | {episodes('exp03b_ppo_3x4_backplay')['true_start_fill_mean']:.4f} / {episodes('exp03b_ppo_3x4_backplay')['true_start_fill_max']:.3f}"),
+    "exp03c true-start fill": ("reports/experiments/exp03_ppo_3x4.md", lambda: f"| 0.000 | {det('exp03c_ppo_3x4_backplay_relaxed_best', 'fill_mean'):.3f} | {episodes('exp03c_ppo_3x4_backplay_relaxed')['true_start_fill_mean']:.4f} / {episodes('exp03c_ppo_3x4_backplay_relaxed')['true_start_fill_max']:.3f}"),
 }
 
 
