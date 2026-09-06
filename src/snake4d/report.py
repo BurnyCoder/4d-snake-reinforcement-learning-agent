@@ -204,11 +204,11 @@ def write_all_experiments(rows: list[dict], reports_dir: Path) -> Path:
 
 
 def to_pdf(reports_dir: Path, pdf_path: Path) -> Path:
-    """Concatenate paper.md, all_experiments.md and the experiment files into one PDF."""
+    """paper.md + all_experiments.md + networks.md + the experiment write-ups, as one PDF."""
     from markdown_pdf import MarkdownPdf, Section  # AGPL tool: docs group, never a runtime import
 
-    parts = [reports_dir / "paper.md", reports_dir / "all_experiments.md",
-             *sorted((reports_dir / "experiments").glob("exp*.md"))]
+    parts = [reports_dir / name for name in ("paper.md", "all_experiments.md", "networks.md")]
+    parts += sorted((reports_dir / "experiments").glob("exp*.md"))  # the hand-written write-ups
     pdf = MarkdownPdf(toc_level=2, optimize=True)
     for part in parts:
         if part.exists():

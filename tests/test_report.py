@@ -81,11 +81,19 @@ def test_report_phase_writes_table_figures_and_data(tmp_path):
 
 
 @pytest.mark.slow
-def test_to_pdf_builds_a_document(tmp_path):
+def test_to_pdf_builds_a_document_in_order(tmp_path):
     pytest.importorskip("markdown_pdf")
+    pymupdf = pytest.importorskip("pymupdf")  # markdown_pdf's renderer, used here to read back
     reports = tmp_path / "reports"
     (reports / "experiments").mkdir(parents=True)
-    (reports / "paper.md").write_text("# Paper\n\nSome text.\n", encoding="utf-8")
-    (reports / "all_experiments.md").write_text("# All\n\n| a |\n|---|\n| 1 |\n", encoding="utf-8")
+    (reports / "paper.md").write_text("# Paper\n\nPAPERMARK\n", encoding="utf-8")
+    (reports / "all_experiments.md").write_text("# All\n\n| a |\n|---|\n| TABLEMARK |\n",
+                                                encoding="utf-8")
+    (reports / "networks.md").write_text("# Networks\n\nNETWORKSMARK\n", encoding="utf-8")
+    (reports / "experiments" / "exp02_ppo_2x4.md").write_text("# Exp02\n\nEXPMARK\n",
+                                                               encoding="utf-8")
     pdf = to_pdf(reports, tmp_path / "paper.pdf")
     assert pdf.stat().st_size > 1000
+    text = "".join(page.get_text() for page in pymupdf.open(str(pdf)))
+    marks = [text.index(m) for m in ("PAPERMARK", "TABLEMARK", "NETWORKSMARK", "EXPMARK")]
+    assert marks == sorted(marks)  # paper, cross-run table, networks comparison, then write-ups
