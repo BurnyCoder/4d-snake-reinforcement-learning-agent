@@ -5,8 +5,9 @@ module.  This file only parses the command line, builds the Config (defaults -> 
 env file -> --set) and calls the phase; all real work and all logging happen inside the phases.
 
 Local notes: phases are resolved lazily by import path so that e.g. ``play`` never requires torch
-(``logging_utils.versions`` imports it defensively, only to record the CUDA device) and
-``train`` never imports pygame (https://docs.python.org/3/library/importlib.html#importlib.import_module).
+(``logging_utils.versions`` imports it defensively, only to record the CUDA device; ``watch`` does
+need it, a checkpoint is a torch model) and ``train`` never imports pygame
+(https://docs.python.org/3/library/importlib.html#importlib.import_module).
 """
 
 import argparse
@@ -19,6 +20,7 @@ from snake4d.config import Config
 PHASES: dict[str, str] = {
     "bench": "snake4d.benchmark:run",      # environment/PPO throughput grid -> docs/benchmark.md
     "play": "snake4d.play:run",            # human play in a pygame window
+    "watch": "snake4d.watch:run",          # a saved model (or scripted policy) plays in that window
     "train": "snake4d.train:run",          # MaskablePPO training with curriculum + evaluation
     "imitate": "snake4d.imitation:run",    # behaviour-clone the route follower -> bc_model.zip
     "evaluate": "snake4d.evaluation:run",  # scripted policy or saved model -> summary.json

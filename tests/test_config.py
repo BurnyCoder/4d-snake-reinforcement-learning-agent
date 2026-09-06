@@ -58,6 +58,11 @@ def test_rollout_and_eval_guards():
         Config(n_envs=1024, n_steps=64, batch_size=2048, eval_every=1000)
 
 
+def test_watch_speed_guard():
+    with pytest.raises(ValueError, match="watch_speed"):
+        Config(watch_speed=0)
+
+
 def test_to_json_roundtrip(tmp_path):
     path = tmp_path / "config.json"
     Config(size=3).to_json(path)
