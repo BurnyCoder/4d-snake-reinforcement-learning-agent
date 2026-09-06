@@ -37,6 +37,7 @@ from snake4d.report import REPORTS, run_name
 GITHUB = "https://github.com/BurnyCoder/4d-snake-reinforcement-learning-agent"
 HUB = "https://huggingface.co"  # repo pages live at HUB/<namespace>/<repo>
 MODEL_FILES = ("best_model.zip", "bc_model.zip", "final_model.zip")  # evaluated checkpoint first
+TEXT_FILES = (".json", ".csv")  # staged with LF endings, like the reports/data copies in git
 NOTE_LIMIT = 500  # add_collection_item caps a note at 500 characters (collections guide)
 DESCRIPTION_LIMIT = 150  # the Hub rejects longer collection descriptions ("Too big", HTTP 400)
 COLLECTION_DESCRIPTION = ("MaskablePPO and behaviour-cloned 4D snake networks (2^4, 3^4, 4^4 "
@@ -93,8 +94,10 @@ def base_run(run_cfg: dict) -> str | None:
 # --- the model card ----------------------------------------------------------------------------
 def describe(phase: str, run_cfg: dict) -> str:
     """One clause naming a run's learning method and curriculum, read from its config."""
-    if phase == "imitate":
-        return "behaviour cloning of the Hamiltonian route follower (`snake4d imitate`)"
+    if phase == "imitate":  # imitation.collect: n_envs * n_steps expert samples, bc_epochs passes
+        return ("behaviour cloning of the Hamiltonian route follower (`snake4d imitate`): "
+                f"{run_cfg['n_envs'] * run_cfg['n_steps']:,} expert samples, "
+                f"{run_cfg['bc_epochs']} epochs, Adam {run_cfg['bc_lr']}")
     if run_cfg.get("model_path"):
         method = "MaskablePPO fine-tuned from the behaviour-cloned network"
     else:
@@ -158,7 +161,7 @@ def model_card(name: str, phase: str, run_cfg: dict, summary: dict, versions: di
                    "deterministic episodes")
     docs = f"{GITHUB}/blob/main/docs"
     body = [f"# {repo}", "",
-            f"A `{run_cfg['net_width']}x{run_cfg['net_width']}` MLP policy for "
+            f"An MLP policy with two hidden layers of {run_cfg['net_width']} units for "
             f"**{ndim}-dimensional snake on the {size}^{ndim} board** ({cells} cells, "
             f"{2 * ndim} moves): "
             f"{describe(phase, run_cfg)}. From a length-1 start it {outcome}, evaluated with the "
@@ -194,7 +197,8 @@ def model_card(name: str, phase: str, run_cfg: dict, summary: dict, versions: di
              "```", ""]
     if phase == "imitate" or base_model:
         body += ["Use deterministic mode: the cloned policy follows a fixed Hamiltonian cycle and "
-                 "sampled off-cycle moves eventually trap the snake (see the results table).", ""]
+                 "sampled off-cycle moves eventually trap the snake (see the results table"
+                 + (f"; analysis: {write_up_url}" if write_up_url else "") + ").", ""]
     training = f"- Phase `{phase}`; experiment file `experiments/{name}.env`"
     training += f"; write-up: {write_up_url}." if write_up_url else "."
     body += ["## Training", "", training, "- Resolved configuration (`config.json`):", "",
@@ -216,7 +220,8 @@ def model_card(name: str, phase: str, run_cfg: dict, summary: dict, versions: di
              "- `config.json`, `versions.json`: the run's resolved configuration and environment.",
              "- `eval/`: evaluation summary and one row per evaluation episode."]
     if phase == "train":
-        body += ["- `train/progress.csv`: the SB3 training log; `figures/`: the learning curves."]
+        body += ["- `train/progress.csv`: the SB3 training log; `figures/`: the learning curves "
+                 "and the fill histogram."]
     body += ["", "## Licence", "", "MIT, like the repository.", ""]
     return "\n".join(_metadata(repo, board_tag, det, tags, base_model) + body)
 
@@ -253,10 +258,15 @@ def stage(run_dir: Path, eval_dir: Path, dest: Path, figures_dir: Path) -> list[
                for kind in ("curves", "fill_hist")]
     staged = []
     for source, target in wanted:
-        if source.exists():  # progress.csv and figures exist for training runs only
-            os.makedirs(_long_path(target.parent), exist_ok=True)
+        if not source.exists():  # progress.csv and figures exist for training runs only
+            continue
+        os.makedirs(_long_path(target.parent), exist_ok=True)
+        if source.suffix in TEXT_FILES:  # runs/ files carry Windows CRLF (text mode); git keeps LF
+            text = Path(_long_path(source)).read_text(encoding="utf-8").replace("\r\n", "\n")
+            Path(_long_path(target)).write_text(text, encoding="utf-8", newline="\n")
+        else:
             shutil.copy2(_long_path(source), _long_path(target))
-            staged.append(target)
+        staged.append(target)
     return staged
 
 
