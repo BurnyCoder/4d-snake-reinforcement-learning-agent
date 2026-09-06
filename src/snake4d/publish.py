@@ -37,6 +37,10 @@ from snake4d.report import REPORTS, run_name
 GITHUB = "https://github.com/BurnyCoder/4d-snake-rl"
 MODEL_FILES = ("best_model.zip", "bc_model.zip", "final_model.zip")  # evaluated checkpoint first
 NOTE_LIMIT = 500  # add_collection_item caps a note at 500 characters (collections guide)
+DESCRIPTION_LIMIT = 150  # the Hub rejects longer collection descriptions ("Too big", HTTP 400)
+COLLECTION_DESCRIPTION = ("MaskablePPO and behaviour-cloned 4D snake networks (2^4, 3^4, 4^4 "
+                          "boards) with configs, evaluation files and cards; negative results "
+                          "included.")
 log = logging.getLogger("snake4d.publish")
 
 
@@ -267,11 +271,9 @@ def ensure_collection(api, cfg: Config):
     for collection in api.list_collections(owner=cfg.hf_namespace):
         if collection.title == cfg.hf_collection:
             return collection
-    description = ("MaskablePPO and behaviour-cloned networks for 4D snake on the 2^4, 3^4 and 4^4 "
-                   "boards, each with its config, evaluation artifacts and model card; negative "
-                   f"results included. Code, reports and the comparison page: {GITHUB}")
     return api.create_collection(title=cfg.hf_collection, namespace=cfg.hf_namespace,
-                                 private=bool(cfg.hf_private), description=description)
+                                 private=bool(cfg.hf_private),
+                                 description=COLLECTION_DESCRIPTION[:DESCRIPTION_LIMIT - 1])
 
 
 def publish_one(api, cfg: Config, name: str, staging: Path, collection_url: str,

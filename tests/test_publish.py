@@ -153,3 +153,7 @@ def test_publish_phase_stages_uploads_and_collects(tmp_path):
 @pytest.mark.parametrize("name", ["exp02_ppo_2x4", "exp05_bc_4x4"])
 def test_publish_names_default_covers_every_evaluated_network(name):
     assert name in Config().publish_names
+
+
+def test_collection_description_respects_the_hub_limit():
+    assert len(publish.COLLECTION_DESCRIPTION) < publish.DESCRIPTION_LIMIT == 150
