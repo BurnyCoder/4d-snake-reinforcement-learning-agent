@@ -35,6 +35,7 @@ from snake4d.logging_utils import make_run_dir, setup_logging
 from snake4d.report import REPORTS, run_name
 
 GITHUB = "https://github.com/BurnyCoder/4d-snake-rl"
+HUB = "https://huggingface.co"  # repo pages live at HUB/<namespace>/<repo>
 MODEL_FILES = ("best_model.zip", "bc_model.zip", "final_model.zip")  # evaluated checkpoint first
 NOTE_LIMIT = 500  # add_collection_item caps a note at 500 characters (collections guide)
 DESCRIPTION_LIMIT = 150  # the Hub rejects longer collection descriptions ("Too big", HTTP 400)
@@ -299,7 +300,7 @@ def publish_one(api, cfg: Config, name: str, staging: Path, collection_url: str,
     api.create_repo(repo_id, repo_type="model", exist_ok=True, private=bool(cfg.hf_private))
     api.upload_folder(folder_path=str(dest), repo_id=repo_id, repo_type="model",
                       commit_message=f"{name}: checkpoint, config, evaluation files, model card")
-    return {"name": name, "repo_id": repo_id, "url": f"https://huggingface.co/{repo_id}",
+    return {"name": name, "repo_id": repo_id, "url": f"{HUB}/{repo_id}",
             "note": collection_note(run_cfg, summary, phase),
             "files": [str(f.relative_to(dest)).replace("\\", "/") for f in files] + ["README.md"],
             "bytes": sum(os.stat(_long_path(f)).st_size for f in files)}
