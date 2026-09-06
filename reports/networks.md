@@ -24,7 +24,8 @@ The weights are downloadable: every network on this page has a Hugging Face Hub 
 evaluation files, a model card and, for training runs, the SB3 log and figures), grouped in the
 collection
 [4D Snake RL: all evaluated networks](https://huggingface.co/collections/BurnyCoder/4d-snake-rl-all-evaluated-networks-6a9d0a0a66c7efcd101b7741),
-uploaded by `snake4d publish` ([docs/architecture.md](../docs/architecture.md)).
+uploaded by `snake4d publish` ([docs/architecture.md](../docs/architecture.md)); `snake4d watch`
+plays any of them in a window (the "Play and watch" section of README.md).
 
 ## What all ten networks share
 

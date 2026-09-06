@@ -9,6 +9,8 @@ changing it. Do not duplicate README content here.)
   Each phase module exposes `run(cfg: Config)`.
 - One physics implementation: `physics.py:SnakeBatch`. `env.py` (single Gymnasium env) and
   `vec_env.py` (batched SB3 VecEnv) are thin adapters over it - never re-implement a rule.
+- One window: `play.py:Window`/`Session` draw the board for human play; `watch.py` drives the same
+  window with a policy from `evaluation.load_policy` - never a second renderer or key loop.
 - Configuration is the flat dataclass in `config.py`; every knob is a `SNAKE_<FIELD>` key in
   `.env` (see `.env.example`). Experiments are `experiments/expNN_<name>.env` override files.
 - Tests live in `tests/` (pytest markers `slow`, `gpu`). Docs in `docs/`, experiment write-ups in
@@ -30,7 +32,7 @@ uv sync --all-groups
 uv run pytest -m "not slow and not gpu"
 uv run pytest -m gpu
 uv run ruff check src tests
-uv run snake4d <bench|play|train|imitate|evaluate|report|pipeline> [--env-file FILE] [--set field=value]
+uv run snake4d <bench|play|watch|train|imitate|evaluate|report|pipeline> [--env-file FILE] [--set field=value]
 uv run --group hub snake4d publish   # Hub repos + collection for SNAKE_PUBLISH_RUNS (needs `hf auth login`)
 ```
 

@@ -164,6 +164,8 @@ CASES = {
     "readme random 4^4 fill": ("README.md", lambda: f"0 % (fill {det('exp01_random_4x4', 'fill_mean'):.2f})"),
     "readme 4^4 ppo fill": ("README.md", lambda: f"0 %, fill {det('exp04_ppo_4x4_best', 'fill_mean'):.2f}"),
     "readme fps": ("README.md", lambda: f"{best_ppo_fps() / 1000:.0f}k PPO steps/s"),
+    "readme watch exp02d": ("README.md", lambda: f"completing {100 * det('exp02d_ppo_2x4_backplay_strict_best'):.1f} % of its\ngames in {det('exp02d_ppo_2x4_backplay_strict_best', 'steps_to_complete_mean'):.1f} moves against the loop follower's {det('exp01_route_2x4', 'steps_to_complete_mean'):.1f}"),
+    "readme watch exp04": ("README.md", lambda: f"never finishes (fill {det('exp04_ppo_4x4_best', 'fill_mean'):.2f})"),
     "paper exp02 plain": ("reports/paper.md", lambda: f"plain PPO {det('exp02_ppo_2x4_best'):.3f} (5M) and {det('exp02c_ppo_2x4_long_best'):.3f} (20M)"),
     "paper exp02 loose": ("reports/paper.md", lambda: f"Backplay (rho 0.2) {det('exp02b_ppo_2x4_backplay_best'):.3f}"),
     "paper exp02 strict": ("reports/paper.md", lambda: f"(rho 0.9, window 4) {det('exp02d_ppo_2x4_backplay_strict_best'):.3f} at 5M"),
