@@ -13,9 +13,11 @@ Local notes:
 * Keys: Space pause/resume, N one move, +/- double/halve the speed, R restart, Esc quit
   (constants: https://pyga.me/docs/ref/key.html).  A finished game stays on screen for ``HOLD_S``
   seconds, then the next one starts.
-* ``watch_gif=1`` records the first game (the whole window, HUD included) as an animated GIF with
-  Pillow, a dependency of matplotlib: ``save_all``, ``append_images``, ``duration`` in ms per frame,
-  ``loop=0`` means forever - https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#gif
+* ``watch_gif=1`` records the first game (the whole window, HUD included; at most
+  ``GIF_MAX_FRAMES`` moves, then the file is written) as an animated GIF with Pillow, a required
+  runtime dependency of matplotlib (https://matplotlib.org/stable/install/dependencies.html):
+  ``save_all``, ``append_images``, ``duration`` in ms per frame, ``loop=0`` means forever -
+  https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#gif
 """
 
 import dataclasses
@@ -34,7 +36,7 @@ from snake4d.logging_utils import make_run_dir, setup_logging
 from snake4d.play import Session, Window, hud_text
 
 MAX_SPEED, HOLD_S, GIF_MAX_FRAMES = 1024, 1.5, 1000
-FASTER = (pygame.K_PLUS, pygame.K_EQUALS, pygame.K_KP_PLUS)  # '+' is Shift+'=' on most layouts
+FASTER = (pygame.K_PLUS, pygame.K_EQUALS, pygame.K_KP_PLUS)  # the '=' key too: no Shift needed
 SLOWER = (pygame.K_MINUS, pygame.K_KP_MINUS)
 HELP = "Space pause   N one move   +/- speed ({} moves/s)   R restart   Esc quit"
 log = logging.getLogger("snake4d.watch")
@@ -80,7 +82,13 @@ def board_of(policy, cfg: Config) -> Config:
 
 
 def advance(policy, env: SnakeEnv, obs: np.ndarray, session: Session, cfg: Config) -> np.ndarray:
-    """One move: masked predict (argmax when ``cfg.deterministic``), step, session bookkeeping."""
+    """One move: masked predict, step, session bookkeeping.
+
+    ``deterministic=True`` returns the distribution's mode, the argmax of the masked
+    probabilities (``MaskableCategoricalDistribution.mode``,
+    https://github.com/Stable-Baselines-Team/stable-baselines3-contrib/blob/master/sb3_contrib/common/maskable/distributions.py);
+    ``False`` samples from them.
+    """
     actions, _ = policy.predict(obs[None], action_masks=env.action_masks()[None],
                                 deterministic=bool(cfg.deterministic))
     obs, _, terminated, truncated, info = env.step(int(np.asarray(actions).reshape(-1)[0]))
@@ -92,7 +100,7 @@ def save_gif(frames: list[np.ndarray], path: Path, speed: int) -> Path:
     """Animated GIF of the recorded frames at ``speed`` frames per second, looping forever."""
     from PIL import Image  # lazy: only the recording path needs Pillow
 
-    images = [Image.fromarray(frame) for frame in frames[:GIF_MAX_FRAMES]]
+    images = [Image.fromarray(frame) for frame in frames]
     images[0].save(path, save_all=True, append_images=images[1:], duration=1000 // speed, loop=0)
     return path
 
@@ -133,9 +141,10 @@ def run(cfg: Config, max_frames: int | None = None) -> Session:
         window.draw(env, (hud_text(env, session), HELP.format(controls.speed)))
         if recording is not None and moved:  # the start position, then one frame per move
             recording.append(window.frame())
-            if session.done:
+            if session.done or len(recording) >= GIF_MAX_FRAMES:  # cap: frames are 1-2 MB each
                 gif = save_gif(recording, run_dir / "game.gif", controls.speed)
-                logger.info("recorded game 1 (%d frames) to %s", len(recording), gif)
+                logger.info("recorded game 1 (%d frames%s) to %s", len(recording),
+                            "" if session.done else ", capped", gif)
                 recording = None
         window.tick(controls.speed)
         frames += 1

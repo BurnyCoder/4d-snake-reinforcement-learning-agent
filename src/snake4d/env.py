@@ -1,7 +1,8 @@
 """Gymnasium adapter: one snake game as a standard ``gym.Env`` (``SnakeBatch`` with ``n=1``).
 
 Global context: used wherever a single classic environment is expected - the env checkers,
-human play, and the DummyVecEnv/SubprocVecEnv rows of the benchmark (``make_vec_env``).
+human play, the watch phase, and the DummyVecEnv/SubprocVecEnv rows of the benchmark
+(``make_vec_env``).
 Training uses the batched adapter in ``vec_env.py``; both share the rules in ``physics.py``.
 
 Local notes: Gymnasium API (``reset -> (obs, info)``, ``step -> 5-tuple``) from

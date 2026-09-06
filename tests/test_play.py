@@ -66,6 +66,10 @@ def test_window_scales_cells_labels_the_tiles_and_fits_two_hud_lines():
     assert frame.max() > 200  # the head is drawn (bright yellow), so the montage is on screen
     assert window.font.size(play.PLAY_HELP)[0] < width  # the help line fits on one line
     window.close()
+    narrow = play.Window(Config(size=3, ndim=3), "3D")  # a 3D montage is only 3 cells wide
+    assert narrow.screen.get_size()[0] == play.WINDOW_PX  # ... but the window keeps the HUD width
+    assert narrow.cell == play.WINDOW_PX // 9  # its 9 tile rows set the cell size
+    narrow.close()
 
 
 def test_headless_window_loop(tmp_path):

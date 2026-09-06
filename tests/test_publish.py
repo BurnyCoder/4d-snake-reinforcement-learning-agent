@@ -83,6 +83,7 @@ def test_repo_name_write_up_base_run_and_model_file_fallback(tmp_path):
     assert publish.write_up("nothing", reports) is None
     clone_path = r"runs\20260904-221730_imitate_exp05_bc_4x4\bc_model.zip"
     assert publish.base_run({"model_path": clone_path}) == "exp05_bc_4x4"
+    assert publish.base_run({"model_path": "exp05_bc_4x4"}) == "exp05_bc_4x4"  # run-name form
     assert publish.base_run({"model_path": ""}) is None
     for zip_name in ("final_model.zip", "bc_model.zip", "best_model.zip"):  # later ones win
         (tmp_path / zip_name).write_bytes(b"z")

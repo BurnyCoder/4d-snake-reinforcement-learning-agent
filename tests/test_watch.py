@@ -69,6 +69,17 @@ def test_headless_route_policy_plays_logs_and_records_a_gif(tmp_path):
     assert image.n_frames == session.steps + 1  # the start position plus one frame per move
 
 
+def test_gif_recording_stops_at_the_frame_cap(tmp_path, monkeypatch):
+    monkeypatch.setattr(watch, "GIF_MAX_FRAMES", 2)
+    cfg = Config(size=2, ndim=2, policy="route", runs_dir=str(tmp_path), watch_speed=200,
+                 watch_gif=1)
+    session = watch.run(cfg, max_frames=80)
+    assert session.steps > 2  # the game went on after the recording stopped
+    (run_dir,) = tmp_path.iterdir()
+    assert "recorded game 1 (2 frames, capped)" in (run_dir / "run.log").read_text(encoding="utf-8")
+    assert pytest.importorskip("PIL.Image").open(run_dir / "game.gif").n_frames == 2
+
+
 def test_saved_model_drives_the_window_on_its_own_board(tmp_path):
     small = Config(size=2, ndim=2, device="cpu", net_width=16, n_envs=4, n_steps=16, batch_size=32)
     build_model(small, make_env(small, 4, 0)).save(tmp_path / "model.zip")  # untrained is fine
