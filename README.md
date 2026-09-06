@@ -43,8 +43,8 @@ Requirements: Windows/Linux, [uv](https://docs.astral.sh/uv/) 0.12+, an NVIDIA G
 slower on 8 CPU threads than on the GPU). Python 3.13 is installed by uv automatically.
 
 ```bash
-git clone https://github.com/BurnyCoder/4d-snake-rl.git
-cd 4d-snake-rl
+git clone https://github.com/BurnyCoder/4d-snake-reinforcement-learning-agent.git
+cd 4d-snake-reinforcement-learning-agent
 uv sync --all-groups          # creates .venv with torch 2.14 (CUDA 13.0 wheels), SB3 2.9, gymnasium 1.3, ...
 cp .env.example .env          # optional: edit any SNAKE_* key (all keys are documented there)
 uv run pytest -m "not slow and not gpu"   # fast suite, about 20 s; run -m gpu for the CUDA smoke test
