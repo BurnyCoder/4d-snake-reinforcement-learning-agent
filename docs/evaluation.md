@@ -13,8 +13,33 @@ An episode is a success when the snake length reaches `C = size**ndim` within th
 |---|---|---|
 | `success_rate` | `summary.json`, `eval/success_rate` | fraction of episodes that fill the board |
 | `fill_mean` | `summary.json`, `rollout/fill_mean` | mean final `length / C` |
+| `length_mean` | `summary.json` | mean episode length in steps over all episodes, successes and failures |
 | `steps_to_complete_mean` | `summary.json` | mean episode length over successful episodes (efficiency vs the route follower) |
 | `win_within` | `summary.json` | fraction of episodes won within `C`, `2C`, `4C`, `C*C/2` steps (a step-capped win rate as in AlphaSnake, https://arxiv.org/abs/2211.09622) |
+
+## Derived efficiency metrics
+
+`reports/networks.md` compares every trained network with the scripted baselines through three
+ratios computed from the fields above. They are the authors' own arithmetic (an estimate of route
+efficiency, not a measured quantity); `tests/test_docs_numbers.py` recomputes them from
+`summary.json`.
+
+- Steps per food = `length_mean / (fill_mean * C - 1)`: mean episode length divided by the mean
+  number of foods eaten (final length minus the starting length of 1), i.e. how far the snake walks
+  between meals.
+- Geometric floor = `ndim * (n^2 - 1) / (3 * n)` for a board with `size = n`: the mean Manhattan
+  distance between two uniformly random cells, 2.00 / 3.56 / 5.00 for n = 2, 3, 4 (the mean absolute
+  difference of two independent uniform draws from `{0, ..., n - 1}` is `(n^2 - 1) / (3 * n)` per
+  axis). Food spawns on a uniformly random free cell (docs/game_rules.md), so this is roughly the
+  fewest steps per food any policy could average; "times floor" is steps per food divided by it. A
+  yardstick rather than a bound: the head is not uniformly placed, the free cells are not the whole
+  board, and the body may block the shortest path.
+- Non-eating move share = `1 - (fill_mean * C - 1) / length_mean`: the fraction of moves that did
+  not end on food.
+
+For policies that never complete the board these ratios describe only the part of the game they
+survive (a policy that dies at fill 0.40 is measured on the moves before it died), so read them
+together with `fill_mean`. "Won within `4C` moves" is the `4C` entry of `win_within` above.
 
 ## Procedure (`snake4d evaluate`)
 
