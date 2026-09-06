@@ -59,10 +59,20 @@ def _with_lines(rgb: np.ndarray, period: int, width: int, axis: int) -> np.ndarr
     return np.concatenate(pieces, axis=axis)
 
 
-def to_rgb(board: np.ndarray, cell: int = 1, line: int = 0) -> np.ndarray:
-    """``(H, W, 3)`` uint8 image of the montage: ``cell`` px per cell, ``line`` px between tiles."""
+def to_rgb(board: np.ndarray, cell: int = 1, line: int = 0,
+           shade: np.ndarray | None = None) -> np.ndarray:
+    """``(H, W, 3)`` uint8 image of the montage: ``cell`` px per cell, ``line`` px between tiles.
+
+    ``shade`` (same shape as ``board``, ``age / length`` in (0, 1]) darkens body cells towards the
+    tail so the snake's order is visible - the brightness gradient of the reference 2D agent
+    linyiLYi/snake-ai (https://github.com/linyiLYi/snake-ai).
+    """
     img, s = montage(board), board.shape[0]
-    rgb = PALETTE[img].repeat(cell, axis=0).repeat(cell, axis=1)  # palette lookup + upscale
+    rgb = PALETTE[img]
+    if shade is not None:
+        factor = np.where(img == BODY, 0.35 + 0.65 * montage(shade), 1.0)[..., None]
+        rgb = (rgb * factor).astype(np.uint8)
+    rgb = rgb.repeat(cell, axis=0).repeat(cell, axis=1)  # upscale
     if line:
         rgb = _with_lines(_with_lines(rgb, s * cell, line, axis=0), s * cell, line, axis=1)
     return np.ascontiguousarray(rgb)
