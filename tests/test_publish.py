@@ -135,7 +135,9 @@ def test_publish_phase_stages_uploads_and_collects(tmp_path):
                               "eval/summary.json", "versions.json"]
     staged = set(uploads[EXP05B])
     assert {"figures/exp05b_ppo_4x4_from_bc_curves.png", "train/progress.csv"} <= staged
-    card = (run_dir / "staging" / EXP05B.split("/")[1] / "README.md").read_text(encoding="utf-8")
+    card_bytes = (run_dir / "staging" / EXP05B.split("/")[1] / "README.md").read_bytes()
+    assert b"\r" not in card_bytes  # LF endings even on Windows
+    card = card_bytes.decode("utf-8")
     assert f"base_model: {EXP05}" in card and "figures/exp05b_ppo_4x4_from_bc_curves.png" in card
     items = [c for c in api.calls if c[0] == "add_collection_item"]
     assert [i[1] for i in items] == created

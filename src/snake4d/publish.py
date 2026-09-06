@@ -295,7 +295,7 @@ def publish_one(api, cfg: Config, name: str, staging: Path, collection_url: str,
                       base_model=f"{cfg.hf_namespace}/{repo_name(base)}" if base else None,
                       write_up_url=write_up(name, reports_dir), collection_url=collection_url,
                       figure_names=tuple(f.name for f in files if f.parent.name == "figures"))
-    (dest / "README.md").write_text(card, encoding="utf-8")
+    (dest / "README.md").write_text(card, encoding="utf-8", newline="\n")  # LF, not Windows CRLF
     api.create_repo(repo_id, repo_type="model", exist_ok=True, private=bool(cfg.hf_private))
     api.upload_folder(folder_path=str(dest), repo_id=repo_id, repo_type="model",
                       commit_message=f"{name}: checkpoint, config, evaluation files, model card")
@@ -326,7 +326,8 @@ def run(cfg: Config, api=None, reports_dir: Path = REPORTS) -> Path:
         published.append(record)
     result = {"collection": {"title": cfg.hf_collection, "slug": collection.slug,
                              "url": collection.url}, "models": published}
-    (run_dir / "published.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+    (run_dir / "published.json").write_text(json.dumps(result, indent=2), encoding="utf-8",
+                                            newline="\n")
     logger.info("%d of %d runs published; %s", len(published), len(cfg.publish_names),
                 collection.url)
     return run_dir
