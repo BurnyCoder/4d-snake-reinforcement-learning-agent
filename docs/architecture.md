@@ -49,13 +49,14 @@ auto-resetting finished rows with `terminal_observation` and `TimeLimit.truncate
 | `pipeline` | `main.py` | Config | train -> evaluate -> report |
 
 `main.py` builds one `Config` (defaults -> `.env` -> `--env-file` -> `--set`) and calls the phase's
-`run(cfg)`. Phases import each other's modules lazily so `play` never requires torch (it is
-imported defensively once, to record the CUDA device in `versions.json`; `watch` needs it to load
-a checkpoint) and `train` never imports pygame. `evaluation.model_zip` resolves `SNAKE_MODEL_PATH`
-for `evaluate`, `watch` and `train`: an existing file is used as is, otherwise the name selects the
-newest `<ts>_train_<name>` or `<ts>_imitate_<name>` directory under `runs_dir` and its evaluated
-checkpoint, `best_model.zip`, else `bc_model.zip`, else `final_model.zip` (`publish.find_run` /
-`publish.model_file`).
+`run(cfg)`; every run directory also holds `config.json` (the resolved Config) and `versions.json`
+(`logging_utils.make_run_dir`), whatever the phase. Phases import each other's modules lazily so
+`play` never requires torch (it is imported defensively once, to record the CUDA device in
+`versions.json`; `watch` needs it to load a checkpoint) and `train` never imports pygame.
+`evaluation.model_zip` resolves `SNAKE_MODEL_PATH` for `evaluate`, `watch` and `train`: an existing
+file is used as is, otherwise the name selects the newest `<ts>_train_<name>` or
+`<ts>_imitate_<name>` directory under `runs_dir` and its evaluated checkpoint, `best_model.zip`,
+else `bc_model.zip`, else `final_model.zip` (`publish.find_run` / `publish.model_file`).
 
 ## Data flow of a training step
 

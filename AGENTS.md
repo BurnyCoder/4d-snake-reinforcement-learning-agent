@@ -19,11 +19,20 @@ changing it. Do not duplicate README content here.)
   are printed exactly as `tests/test_docs_numbers.py` formats them), generated figures in
   `reports/figures/`, small copies of run artifacts in `reports/data/`, the generated table in
   `reports/all_experiments.md`; run artifacts in `runs/` (ignored): `run.log` (phase log),
-  SB3's `log.txt`/`progress.csv`, `eval/evaluations.npz`, models.
-- Adding an experiment: write `experiments/expNN_<name>.env` (overrides only), run
-  `uv run snake4d train --env-file ...`, then `uv run snake4d report`, then write
-  `reports/experiments/expNN_<name>.md` (question, hypothesis, setup, results, learnings) and the
-  network's row in `reports/networks.md`.
+  SB3's `log.txt`/`progress.csv`, `eval/evaluations.npz`, models; Hub downloads in `weights/`
+  (ignored). `CLAUDE.md` only imports this file (`@AGENTS.md`).
+- Adding an experiment: write `experiments/expNN_<name>.env` (overrides only, including
+  `SNAKE_RUN_NAME=expNN_<name>`); `uv run snake4d train --env-file ...` (or `imitate`); evaluate the
+  checkpoint as `uv run snake4d evaluate --env-file ... --set model_path=expNN_<name>
+  --set run_name=expNN_<name>_best` (`_eval` for an imitate run: `publish.find_eval` and the
+  `reports/data/` links of `reports/networks.md` expect these suffixes); `uv run snake4d report`
+  (`git checkout -- reports/data` afterwards when the diff is only CRLF re-copies); write
+  `reports/experiments/expNN_<name>.md` (question, hypothesis, setup, results, learnings); add the
+  network's rows to `reports/networks.md` with the cells printed by
+  `uv run python -c "import sys; sys.path.insert(0, 'tests'); import test_docs_numbers as t; [print(r, m, t.cell(r, m)) for r in t.NETWORKS for m in t.METRICS]"`
+  and a `CASES` entry in `tests/test_docs_numbers.py` for every hand-typed number; add the run name
+  to `publish_runs` in `config.py` and `.env.example` (`tests/test_publish.py` requires it to equal
+  the archived `_best`/`_eval` set) and run `uv run --group hub snake4d publish`.
 
 ## Commands
 
@@ -58,4 +67,4 @@ uv run --group hub snake4d publish   # Hub repos + collection for SNAKE_PUBLISH_
 - TDD: write or extend a test in the same PR as the code; run the full pipeline like a user and read
   `runs/<run>/log.txt` before calling anything done.
 - Git: feature branch per phase, meaningful commits, PR merged with `gh pr merge --merge`; never
-  commit `.env`, `runs/`, `.venv/`.
+  commit `.env`, `runs/`, `weights/`, `.venv/`.
