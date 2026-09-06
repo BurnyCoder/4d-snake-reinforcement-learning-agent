@@ -28,12 +28,14 @@ efficiency, not a measured quantity); `tests/test_docs_numbers.py` recomputes th
   number of foods eaten (final length minus the starting length of 1), i.e. how far the snake walks
   between meals.
 - Geometric floor = `ndim * (n^2 - 1) / (3 * n)` for a board with `size = n`: the mean Manhattan
-  distance between two uniformly random cells, 2.00 / 3.56 / 5.00 for n = 2, 3, 4 (the mean absolute
-  difference of two independent uniform draws from `{0, ..., n - 1}` is `(n^2 - 1) / (3 * n)` per
-  axis). Food spawns on a uniformly random free cell (docs/game_rules.md), so this is roughly the
-  fewest steps per food any policy could average; "times floor" is steps per food divided by it. A
-  yardstick rather than a bound: the head is not uniformly placed, the free cells are not the whole
-  board, and the body may block the shortest path.
+  distance between two uniformly random cells, 2.00 / 3.56 / 5.00 for n = 2, 3, 4. Per axis, the
+  mean absolute difference of two independent uniform draws from `{0, ..., n - 1}` is
+  `sum_{d=1}^{n-1} 2 d (n - d) / n^2 = (n^2 - 1) / (3 * n)`; `tests/test_docs_numbers.py` checks
+  the closed form by brute force over all cell pairs. Food spawns on a uniformly random free cell
+  (docs/game_rules.md, `physics._spawn_food`), so this is roughly the fewest steps per food any
+  policy could average; "times floor" is steps per food divided by it. A yardstick rather than a
+  bound: the head is not uniformly placed, the free cells are not the whole board, and the body may
+  block the shortest path.
 - Non-eating move share = `1 - (fill_mean * C - 1) / length_mean`: the fraction of moves that did
   not end on food.
 
