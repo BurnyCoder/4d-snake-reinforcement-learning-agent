@@ -44,7 +44,7 @@ auto-resetting finished rows with `terminal_observation` and `TimeLimit.truncate
 | `imitate` | `imitation.py`, `agents.py`, `train.py` | Config | `runs/<ts>_imitate_<name>/bc_model.zip` (policy behaviour-cloned on route-follower data over all snake lengths) |
 | `evaluate` | `evaluation.py`, `agents.py` | Config (`SNAKE_MODEL_PATH` or `SNAKE_POLICY`) | `runs/<ts>_evaluate_<name>/` (`summary.json`, `eval_episodes.csv`, `run.log`) |
 | `report` | `report.py` | every run directory | `reports/figures/`, `reports/data/`, `reports/all_experiments.md`, optional `reports/paper.pdf` |
-| `publish` | `publish.py` | the train/imitate run and the evaluation run of every name in `SNAKE_PUBLISH_RUNS`, `reports/figures/` | one Hub model repo per run (checkpoint, `config.json`, `versions.json`, `eval/`, `train/progress.csv`, `figures/`, `README.md` model card), the Hub collection, `runs/<ts>_publish_*/published.json` |
+| `publish` | `publish.py` | the train/imitate run and the evaluation run of every name in `SNAKE_PUBLISH_RUNS`, `reports/figures/` | one Hub model repo per run (checkpoint, `config.json`, `versions.json`, `eval/`, `README.md` model card, plus `train/progress.csv` and `figures/` for training runs), the Hub collection, `runs/<ts>_publish_*/published.json` |
 | `pipeline` | `main.py` | Config | train -> evaluate -> report |
 
 `main.py` builds one `Config` (defaults -> `.env` -> `--env-file` -> `--set`) and calls the phase's
