@@ -1,6 +1,6 @@
 # Experiment 01 - Scripted baselines: is every board completable, and at what step cost?
 
-Date: 2026-09-04. Command: `uv run snake4d evaluate --set size=<2|3|4> --set ndim=4 --set policy=<route|random>`
+Date: 2026-09-04. Command: `uv run snake4d evaluate --set size=<2|3|4> --set ndim=4 --set policy=<route|random> --set run_name=exp01_<policy>_<size>x4`
 (runs `*_evaluate_exp01_*`; per-episode CSVs and summaries in `reports/data/exp01_*`).
 
 ## Question
