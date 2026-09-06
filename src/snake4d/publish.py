@@ -25,6 +25,7 @@ Local notes:
 
 import json
 import logging
+import os
 import re
 import shutil
 from pathlib import Path
@@ -144,7 +145,7 @@ def model_card(name: str, phase: str, run_cfg: dict, summary: dict, versions: di
     tags = ["4d-snake", board_tag, "snake", "reinforcement-learning", "deep-reinforcement-learning",
             "stable-baselines3", "sb3-contrib", "maskable-ppo"]
     tags += ["behavior-cloning", "imitation-learning"] if phase == "imitate" else []
-    tags += ["backplay-curriculum"] if run_cfg.get("curriculum") else []
+    tags += ["backplay-curriculum"] if phase == "train" and run_cfg.get("curriculum") else []
     if det["success_rate_mean"] == 1.0:
         outcome = "completes the board in every deterministic evaluation episode"
     else:
@@ -176,13 +177,14 @@ def model_card(name: str, phase: str, run_cfg: dict, summary: dict, versions: di
              f"--set ndim={ndim}",
              "```", "", "```python",
              "# https://sb3-contrib.readthedocs.io/en/master/modules/ppo_mask.html",
-             "from sb3_contrib import MaskablePPO", "from snake4d.config import Config",
-             "from snake4d.vec_env import make_env", "",
+             "from sb3_contrib import MaskablePPO",
+             "from sb3_contrib.common.maskable.utils import get_action_masks",
+             "from snake4d.config import Config", "from snake4d.vec_env import make_env", "",
              f"cfg = Config(size={size}, ndim={ndim})",
              f'model = MaskablePPO.load("weights/{zip_name}", device="cpu")',
              "env = make_env(cfg, 1, 0)  # one board; observation shape (1, 4*C + 2)",
              "obs = env.reset()",
-             "masks = env.action_masks()  # the legal moves, one row per board",
+             "masks = get_action_masks(env)  # the legal moves, one row per board",
              "action, _ = model.predict(obs, action_masks=masks, deterministic=True)",
              "```", ""]
     if phase == "imitate" or base_model:
@@ -226,6 +228,14 @@ def collection_note(run_cfg: dict, summary: dict, phase: str) -> str:
 
 
 # --- staging and uploading ---------------------------------------------------------------------
+def _long_path(path: Path) -> str:
+    """Absolute path with the ``\\\\?\\`` prefix on Windows: file calls work past MAX_PATH (260).
+
+    https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
+    """
+    return f"\\\\?\\{path.resolve()}" if os.name == "nt" else str(path)
+
+
 def stage(run_dir: Path, eval_dir: Path, dest: Path, figures_dir: Path) -> list[Path]:
     """Copy the checkpoint, configs, evaluation files and figures into ``dest`` (repo layout)."""
     name, zip_path = run_name(run_dir), model_file(run_dir)
@@ -239,8 +249,8 @@ def stage(run_dir: Path, eval_dir: Path, dest: Path, figures_dir: Path) -> list[
     staged = []
     for source, target in wanted:
         if source.exists():  # progress.csv and figures exist for training runs only
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(source, target)
+            os.makedirs(_long_path(target.parent), exist_ok=True)
+            shutil.copy2(_long_path(source), _long_path(target))
             staged.append(target)
     return staged
 
@@ -290,7 +300,7 @@ def publish_one(api, cfg: Config, name: str, staging: Path, collection_url: str,
     return {"name": name, "repo_id": repo_id, "url": f"https://huggingface.co/{repo_id}",
             "note": collection_note(run_cfg, summary, phase),
             "files": [str(f.relative_to(dest)).replace("\\", "/") for f in files] + ["README.md"],
-            "bytes": sum(f.stat().st_size for f in files)}
+            "bytes": sum(os.stat(_long_path(f)).st_size for f in files)}
 
 
 def run(cfg: Config, api=None, reports_dir: Path = REPORTS) -> Path:
