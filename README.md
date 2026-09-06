@@ -160,6 +160,9 @@ The cross-experiment table is generated in [reports/all_experiments.md](reports/
 each experiment's write-up is under [reports/experiments/](reports/experiments/); the paper is
 [reports/paper.md](reports/paper.md) / [reports/paper.pdf](reports/paper.pdf); all ten trained
 networks beside both scripted baselines, in plain words: [reports/networks.md](reports/networks.md).
+The weights, configs and evaluation files of those ten networks are on the Hugging Face Hub, one
+repo per run (`BurnyCoder/4d-snake-<run>`, uploaded by `snake4d publish`), in the collection
+[4D Snake RL: all evaluated networks](https://huggingface.co/collections/BurnyCoder/4d-snake-rl-all-evaluated-networks-6a9d0a0a66c7efcd101b7741).
 
 | board | route follower ([exp01](reports/data/exp01_route_4x4/summary.json)) | random legal play ([exp01](reports/data/exp01_random_4x4/summary.json)) | best learned agent | write-up, data |
 |---|---|---|---|---|
