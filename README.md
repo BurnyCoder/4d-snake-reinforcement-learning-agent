@@ -65,6 +65,7 @@ uv run snake4d train --set model_path=runs/<imitate run>/bc_model.zip   # PPO fi
 uv run snake4d evaluate --set model_path=runs/<run>/best_model.zip --set size=2 --set ndim=4
 uv run snake4d report                            # figures + reports/all_experiments.md
 uv run --group docs snake4d report --pdf         # ... plus reports/paper.pdf
+uv run --group hub snake4d publish               # evaluated checkpoints + model cards -> Hugging Face Hub repos and a collection (after `hf auth login`)
 uv run snake4d pipeline --env-file experiments/exp04_ppo_4x4.env   # train -> evaluate -> report
 uv run tensorboard --logdir runs                 # optional live curves
 ```
@@ -86,6 +87,10 @@ uv run tensorboard --logdir runs                 # optional live curves
 4. `report`: reads every run directory, draws `reports/figures/<run>_curves.png` and
    `<run>_fill_hist.png`, copies the small artifacts to `reports/data/<run>/`, writes the table in
    `reports/all_experiments.md`, and with `--pdf` compiles `reports/paper.pdf`.
+5. `publish`: for every run name in `SNAKE_PUBLISH_RUNS`, copies the evaluated checkpoint,
+   `config.json`, `versions.json`, the evaluation files and the figures into
+   `runs/<ts>_publish_*/staging/<repo>/`, writes a model card, uploads the folder to the Hub repo
+   `<namespace>/4d-snake-<run>`, adds it to the collection and records everything in `published.json`.
 
 ## Architecture
 
@@ -115,12 +120,16 @@ flowchart LR
     subgraph out [Outputs]
         play[play.py: pygame window]
         report[report.py: figures, tables, PDF]
+        publish[publish.py: model cards, Hub repos, collection]
         runs[(runs/ ... progress.csv, evaluations.npz, models)]
         reports[(reports/ ... figures, data, all_experiments.md, paper.pdf)]
+        hub[(Hugging Face Hub)]
     end
     main --> config
-    main --> train & evaluation & bench & play & report & imitation
-    logging --> train & evaluation & bench & play & report & imitation
+    main --> train & evaluation & bench & play & report & imitation & publish
+    logging --> train & evaluation & bench & play & report & imitation & publish
+    report --> publish
+    runs --> publish --> hub
     agents --> imitation --> runs
     train --> imitation
     vec --> imitation
@@ -151,6 +160,9 @@ The cross-experiment table is generated in [reports/all_experiments.md](reports/
 each experiment's write-up is under [reports/experiments/](reports/experiments/); the paper is
 [reports/paper.md](reports/paper.md) / [reports/paper.pdf](reports/paper.pdf); all ten trained
 networks beside both scripted baselines, in plain words: [reports/networks.md](reports/networks.md).
+The weights, configs and evaluation files of those ten networks are on the Hugging Face Hub, one
+repo per run (`BurnyCoder/4d-snake-<run>`, uploaded by `snake4d publish`), in the collection
+[4D Snake RL: all evaluated networks](https://huggingface.co/collections/BurnyCoder/4d-snake-rl-all-evaluated-networks-6a9d0a0a66c7efcd101b7741).
 
 | board | route follower ([exp01](reports/data/exp01_route_4x4/summary.json)) | random legal play ([exp01](reports/data/exp01_random_4x4/summary.json)) | best learned agent | write-up, data |
 |---|---|---|---|---|

@@ -16,6 +16,7 @@ the following projects informed the design and are credited here:
 | [DLR-RM/stable-baselines3](https://github.com/DLR-RM/stable-baselines3), [Stable-Baselines-Team/stable-baselines3-contrib](https://github.com/Stable-Baselines-Team/stable-baselines3-contrib) | MIT | library dependencies (PPO, MaskablePPO, VecEnv, VecMonitor, callbacks, logger) |
 | [Farama-Foundation/Gymnasium](https://github.com/Farama-Foundation/Gymnasium) | MIT | library dependency (Env API, env checker) |
 | [vb64/markdown-pdf](https://github.com/vb64/markdown-pdf) (uses PyMuPDF) | AGPL-3.0 | documentation tooling only (`docs` dependency group), used to build `reports/paper.pdf`; not a runtime dependency |
+| [huggingface/huggingface_hub](https://github.com/huggingface/huggingface_hub) | Apache-2.0 | upload client of the `publish` phase only (`hub` dependency group): `create_repo`, `upload_folder`, collections API; not a runtime dependency |
 
 Papers (full references in [reports/paper.md](reports/paper.md)): Huang & Ontanon 2020 (invalid
 action masking), Ng, Harada & Russell 1999 and Grzes 2017 (potential-based shaping, episodic

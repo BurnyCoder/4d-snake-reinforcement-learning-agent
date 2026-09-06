@@ -86,6 +86,14 @@ class Config:
     # --- imitation warm start (phase `imitate`) ---------------------------------------------
     bc_epochs: int = 20          # passes over the n_envs * n_steps expert samples
     bc_lr: float = 1e-3          # Adam learning rate for behaviour cloning
+    # --- publishing (phase `publish`: Hub repos + collection; token from `hf auth login`) ------
+    publish_runs: str = ("exp02_ppo_2x4,exp02b_ppo_2x4_backplay,exp02c_ppo_2x4_long,"
+                         "exp02d_ppo_2x4_backplay_strict,exp03a_ppo_3x4_nocur,exp03b_ppo_3x4_backplay,"
+                         "exp03c_ppo_3x4_backplay_relaxed,exp04_ppo_4x4,exp05_bc_4x4,"
+                         "exp05b_ppo_4x4_from_bc")  # every evaluated network of reports/networks.md
+    hf_namespace: str = "BurnyCoder"
+    hf_collection: str = "4D Snake RL: all evaluated networks"
+    hf_private: int = 0          # 1 = private repos and collection
     # --- paths / phase arguments ------------------------------------------------------------
     runs_dir: str = "runs"
     run_name: str = "run"
@@ -146,6 +154,11 @@ class Config:
     def bench_batches(self) -> tuple[int, ...]:
         """Minibatch sizes of the benchmark sweep, parsed from ``bench_batch_sizes``."""
         return tuple(int(s) for s in self.bench_batch_sizes.split(",") if s.strip())
+
+    @property
+    def publish_names(self) -> tuple[str, ...]:
+        """Run names for the ``publish`` phase, parsed from the comma-separated ``publish_runs``."""
+        return tuple(s.strip() for s in self.publish_runs.split(",") if s.strip())
 
     # --- construction / persistence ----------------------------------------------------------
     @classmethod

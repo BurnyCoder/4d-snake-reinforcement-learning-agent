@@ -19,6 +19,12 @@ efficiency rather than a measurement. `tests/test_docs_numbers.py` recomputes ev
 every baseline number and every verdict on this page from `reports/data/`, and checks the weight
 counts against the built model.
 
+The weights are downloadable: every network on this page has a Hugging Face Hub repo named
+`BurnyCoder/4d-snake-<run>` (the evaluated checkpoint, `config.json`, `versions.json`, the
+evaluation files, the figures and a model card), grouped in the collection
+[4D Snake RL: all evaluated networks](https://huggingface.co/collections/BurnyCoder/4d-snake-rl-all-evaluated-networks-6a9d0a0a66c7efcd101b7741),
+uploaded by `snake4d publish` ([docs/architecture.md](../docs/architecture.md)).
+
 ## What all ten networks share
 
 | component | technical, where it is defined | in plain words |

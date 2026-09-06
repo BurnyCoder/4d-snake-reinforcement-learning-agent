@@ -23,6 +23,7 @@ PHASES: dict[str, str] = {
     "imitate": "snake4d.imitation:run",    # behaviour-clone the route follower -> bc_model.zip
     "evaluate": "snake4d.evaluation:run",  # scripted policy or saved model -> summary.json
     "report": "snake4d.report:run",        # figures, tables, all_experiments.md, optional PDF
+    "publish": "snake4d.publish:run",      # checkpoints + model cards -> Hub repos + collection
     "pipeline": "snake4d.main:pipeline",   # train -> evaluate -> report
 }
 

@@ -44,6 +44,11 @@ dev = [
 docs = [
     "markdown-pdf>=1.13",
 ]
+# Hub client (Apache-2.0) used only by `uv run --group hub snake4d publish`
+# (https://huggingface.co/docs/huggingface_hub/guides/upload)
+hub = [
+    "huggingface-hub>=1.30",
+]
 
 # Bind torch to the explicit CUDA 13.0 index: the PyPI Windows wheel is CPU-only
 # (https://docs.astral.sh/uv/guides/integration/pytorch/); Blackwell (sm_120) needs a CUDA 12.8+ build,
