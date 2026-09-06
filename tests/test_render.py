@@ -27,3 +27,12 @@ def test_ascii_and_rgb_show_every_entity():
     assert text.count("@") == 1 and text.count("o") == 1 and text.count("*") == 1
     rgb = to_rgb(board, cell=2, line=1)
     assert rgb.shape == (9 * 2 + 2, 9 * 2 + 2, 3) and rgb.dtype == np.uint8
+
+
+def test_shade_darkens_the_body_towards_the_tail_only():
+    board = np.zeros((2, 2), dtype=np.int8)
+    board[0, 0], board[0, 1], board[1, 1] = BODY, BODY, HEAD  # tail (0,0), neck (0,1), head
+    shade = np.array([[1 / 3, 2 / 3], [0.0, 1.0]])  # age / length
+    plain, shaded = to_rgb(board), to_rgb(board, shade=shade)
+    assert (shaded[0, 0] < shaded[0, 1]).all() and (shaded[0, 1] < plain[0, 1]).all()
+    assert (shaded[1, 1] == plain[1, 1]).all()  # the head keeps its full colour

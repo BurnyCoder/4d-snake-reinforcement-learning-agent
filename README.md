@@ -56,7 +56,11 @@ defaults < `.env` < `--env-file experiments/<exp>.env` < `--set field=value`.
 ## Use
 
 ```bash
-uv run snake4d play --set size=3                 # human play: WASD = x/y, IJKL = z/w, R restart, Esc quit
+uv run snake4d play                              # human play on the 4^4 board (--set size=2 for the small one): WASD = x/y, IJKL = z/w, R restart, Esc quit
+uv run snake4d watch --set model_path=exp02d_ppo_2x4_backplay_strict   # watch the best learned network play 2^4 (a run name under runs/, or a .zip path)
+uv run snake4d watch --set model_path=exp04_ppo_4x4                    # the 4^4 network trained from scratch: an efficient forager that never finishes
+uv run snake4d watch --set model_path=exp05b_ppo_4x4_from_bc --set watch_speed=64   # the 4^4 finisher (a cloned loop follower; 16k-move games)
+uv run snake4d watch --set policy=route                                # the scripted Hamiltonian loop itself
 uv run snake4d bench                             # throughput grid -> docs/benchmark.md
 uv run snake4d evaluate --set policy=route       # scripted baseline on the default 4^4 board
 uv run snake4d train --env-file experiments/exp02_ppo_2x4.env
@@ -68,6 +72,33 @@ uv run --group docs snake4d report --pdf         # ... plus reports/paper.pdf
 uv run --group hub snake4d publish               # checkpoints + model cards -> Hub repos and a collection (after `hf auth login`)
 uv run snake4d pipeline --env-file experiments/exp04_ppo_4x4.env   # train -> evaluate -> report
 uv run tensorboard --logdir runs                 # optional live curves
+```
+
+## Play and watch
+
+`play` and `watch` share one window: the 4D board is drawn as a `z`-by-`w` grid of `x`-by-`y`
+tiles (tile rows labelled `z0..`, tile columns `w0..`), the head yellow, the food red, the body
+green shading from dark at the tail to bright at the neck. A move along `x` or `y` stays inside a
+tile; a move along `z` or `w` jumps to the neighbouring tile. `watch` plays game after game (Space
+pauses, N plays one move, `+`/`-` double or halve the speed, R restarts) and infers the board size
+from the checkpoint. `SNAKE_MODEL_PATH` takes a run name (the newest `train`/`imitate` run of that
+name under `runs/`) or a `.zip`; `SNAKE_DETERMINISTIC=0` samples moves instead of taking the
+argmax; `SNAKE_WATCH_GIF=1` records the first game as `runs/<ts>_watch_<name>/game.gif`.
+
+Which network to watch: [reports/networks.md](reports/networks.md) compares all ten. The
+strict-curriculum 2^4 agent exp02d is the best genuinely learned one, completing 96.3 % of its
+games in 43.5 moves against the loop follower's 65.9; the two 4^4 networks that always finish are
+behaviour-cloned copies of that loop, and the 4^4 network trained from scratch walks efficiently
+but never finishes (fill 0.40).
+
+![exp02d playing one 2^4 game](reports/figures/exp02d_ppo_2x4_backplay_strict_game.gif)
+
+Without training anything, the weights come from the Hub
+(https://huggingface.co/docs/huggingface_hub/guides/cli#hf-download):
+
+```bash
+uv run --group hub hf download BurnyCoder/4d-snake-exp02d-ppo-2x4-backplay-strict best_model.zip --local-dir weights
+uv run snake4d watch --set model_path=weights/best_model.zip
 ```
 
 ## What happens when you run it (data flow)
@@ -84,10 +115,13 @@ uv run tensorboard --logdir runs                 # optional live curves
 3. `evaluate`: the same batched env with one episode per board runs the model or a scripted
    policy through sb3-contrib's masked `evaluate_policy` for every seed; `summary.json` and
    `eval_episodes.csv` are written.
-4. `report`: reads every run directory, draws `reports/figures/<run>_curves.png` and
+4. `watch`: loads the checkpoint (or a scripted policy), infers the board from its input and
+   output sizes, and plays it in the `play` window, one masked `predict` per move; every game's
+   outcome goes to `run.log` and, when asked, the first game to `game.gif`.
+5. `report`: reads every experiment run directory, draws `reports/figures/<run>_curves.png` and
    `<run>_fill_hist.png`, copies the small artifacts to `reports/data/<run>/`, writes the table in
    `reports/all_experiments.md`, and with `--pdf` compiles `reports/paper.pdf`.
-5. `publish`: for every run name in `SNAKE_PUBLISH_RUNS`, copies the evaluated checkpoint,
+6. `publish`: for every run name in `SNAKE_PUBLISH_RUNS`, copies the evaluated checkpoint,
    `config.json`, `versions.json`, the evaluation files and, for training runs, the SB3 log and the
    figures into `runs/<ts>_publish_*/staging/<repo>/`, writes a model card, uploads the folder to the
    Hub repo `<namespace>/4d-snake-<run>`, adds it to the collection and records everything in
@@ -98,7 +132,7 @@ uv run tensorboard --logdir runs                 # optional live curves
 ```mermaid
 flowchart LR
     subgraph cli [CLI]
-        main[main.py: phases bench / play / train / imitate / evaluate / report / pipeline]
+        main[main.py: phases bench / play / watch / train / imitate / evaluate / report / publish / pipeline]
         config[config.py: Config from defaults, .env, --env-file, --set]
         logging[logging_utils.py: run dirs, run.log, versions.json]
     end
@@ -120,6 +154,7 @@ flowchart LR
     end
     subgraph out [Outputs]
         play[play.py: pygame window]
+        watch[watch.py: a checkpoint plays in the window]
         report[report.py: figures, tables, PDF]
         publish[publish.py: model cards, Hub repos, collection]
         runs[(runs/ ... progress.csv, evaluations.npz, models)]
@@ -127,8 +162,10 @@ flowchart LR
         hub[(Hugging Face Hub)]
     end
     main --> config
-    main --> train & evaluation & bench & play & report & imitation & publish
-    logging --> train & evaluation & bench & play & report & imitation & publish
+    main --> train & evaluation & bench & play & watch & report & imitation & publish
+    logging --> train & evaluation & bench & play & watch & report & imitation & publish
+    evaluation --> watch
+    play --> watch
     report --> publish
     runs --> publish --> hub
     agents --> imitation --> runs

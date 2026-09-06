@@ -40,6 +40,7 @@ auto-resetting finished rows with `terminal_observation` and `TimeLimit.truncate
 |---|---|---|---|
 | `bench` | `benchmark.py` | Config | `runs/<ts>_bench_*/benchmark.json`, `docs/benchmark.md` |
 | `play` | `play.py` | Config | `runs/<ts>_play_*/run.log` |
+| `watch` | `watch.py`, `play.py` (window), `evaluation.py` (policy loading) | Config (`SNAKE_MODEL_PATH` as a run name under `runs_dir` or a `.zip`, else `SNAKE_POLICY`); the board is inferred from the checkpoint's spaces | `runs/<ts>_watch_*/` (`run.log` with one line per game, `config.json` with the inferred board, optional `game.gif`) |
 | `train` | `train.py`, `callbacks.py` | Config, optional `SNAKE_MODEL_PATH` | `runs/<ts>_train_<name>/` (`run.log`, SB3 `log.txt`, `progress.csv`, TensorBoard events, `monitor.monitor.csv`, `eval/evaluations.npz`, `best_model.zip`, `checkpoints/`, `final_model.zip`, `config.json`, `versions.json`) |
 | `imitate` | `imitation.py`, `agents.py`, `train.py` | Config | `runs/<ts>_imitate_<name>/bc_model.zip` (policy behaviour-cloned on route-follower data over all snake lengths) |
 | `evaluate` | `evaluation.py`, `agents.py` | Config (`SNAKE_MODEL_PATH` or `SNAKE_POLICY`) | `runs/<ts>_evaluate_<name>/` (`summary.json`, `eval_episodes.csv`, `run.log`) |
@@ -49,8 +50,11 @@ auto-resetting finished rows with `terminal_observation` and `TimeLimit.truncate
 
 `main.py` builds one `Config` (defaults -> `.env` -> `--env-file` -> `--set`) and calls the phase's
 `run(cfg)`. Phases import each other's modules lazily so `play` never requires torch (it is
-imported defensively once, to record the CUDA device in `versions.json`) and `train` never
-imports pygame.
+imported defensively once, to record the CUDA device in `versions.json`; `watch` needs it to load
+a checkpoint) and `train` never imports pygame. `evaluation.model_zip` resolves `SNAKE_MODEL_PATH`:
+an existing file is used as is, otherwise the name selects the newest `<ts>_train_<name>` or
+`<ts>_imitate_<name>` directory under `runs_dir` and its evaluated checkpoint
+(`publish.find_run` / `publish.model_file`).
 
 ## Data flow of a training step
 

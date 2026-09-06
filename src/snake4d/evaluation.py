@@ -116,12 +116,28 @@ def write_results(run_dir: Path, summary: dict, records: list[dict]) -> None:
         writer.writerows(records)
 
 
+def model_zip(cfg: Config) -> Path:
+    """``cfg.model_path`` as a file, or the evaluated checkpoint of the newest run of that name."""
+    path = Path(cfg.model_path)
+    if path.is_file():
+        return path
+    from snake4d.publish import find_run, model_file  # lazy: publish imports report (pandas)
+
+    run_dir = find_run(Path(cfg.runs_dir), cfg.model_path)
+    if run_dir is None:
+        raise FileNotFoundError(f"{cfg.model_path}: neither a file nor the name of a train/imitate "
+                                f"run under {cfg.runs_dir}")
+    return model_file(run_dir)
+
+
 def load_policy(cfg: Config):
     """A saved MaskablePPO (evaluated deterministic + stochastic) or a scripted policy."""
     if cfg.model_path:
         from sb3_contrib import MaskablePPO  # lazy: scripted baselines never need torch
 
-        return MaskablePPO.load(cfg.model_path, device=cfg.device), (True, False)
+        path = model_zip(cfg)
+        log.info("loading %s", path)
+        return MaskablePPO.load(str(path), device=cfg.device), (True, False)
     return POLICIES[cfg.policy](cfg), (True,)
 
 

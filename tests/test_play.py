@@ -2,6 +2,7 @@
 
 import os
 
+import numpy as np
 import pygame
 
 from snake4d.config import Config
@@ -49,6 +50,22 @@ def test_death_then_any_key_restarts():
     assert session.done and session.status == "dead"
     play.apply_key(env, pygame.K_d, session)
     assert not session.done and session.steps == 0 and env.sim.length[0] == 1
+
+
+def test_window_scales_cells_labels_the_tiles_and_fits_two_hud_lines():
+    cfg = Config(size=2, ndim=4)
+    window = play.Window(cfg, "test")
+    assert window.cell == play.WINDOW_PX // 4  # the 2^4 montage is 4 cells wide
+    width, height = window.screen.get_size()
+    assert width > play.WINDOW_PX and height > width  # labels margin; HUD below the board
+    env = SnakeEnv(cfg)
+    env.reset(seed=0)
+    window.draw(env, (play.hud_text(env, play.Session()), play.PLAY_HELP))
+    frame = window.frame()
+    assert frame.shape == (height, width, 3) and frame.dtype == np.uint8
+    assert frame.max() > 200  # the head is drawn (bright yellow), so the montage is on screen
+    assert window.font.size(play.PLAY_HELP)[0] < width  # the help line fits on one line
+    window.close()
 
 
 def test_headless_window_loop(tmp_path):

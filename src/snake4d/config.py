@@ -94,10 +94,14 @@ class Config:
     hf_namespace: str = "BurnyCoder"
     hf_collection: str = "4D Snake RL: all evaluated networks"
     hf_private: int = 0          # 1 = private repos and collection
+    # --- watching (phase `watch`: a checkpoint or scripted policy plays in the window) ---------
+    watch_speed: int = 8         # moves per second; the +/- keys double / halve it while watching
+    deterministic: int = 1       # 1 = argmax move (the mode of the reported scores), 0 = sample
+    watch_gif: int = 0           # 1 = record the first game to runs/<ts>_watch_<name>/game.gif
     # --- paths / phase arguments ------------------------------------------------------------
     runs_dir: str = "runs"
     run_name: str = "run"
-    model_path: str = ""
+    model_path: str = ""         # a saved .zip, or the name of a train/imitate run under runs_dir
     policy: str = "route"
 
     def __post_init__(self) -> None:
@@ -117,6 +121,7 @@ class Config:
         _check(self.eval_every >= self.n_steps * self.n_envs,
                "eval_every must be >= one rollout (n_steps * n_envs)")
         _check(0.0 <= self.p_true_start <= 1.0, "p_true_start must be in [0, 1]")
+        _check(self.watch_speed >= 1, "watch_speed must be >= 1 move per second")
 
     # --- derived quantities (single definitions used everywhere) -----------------------------
     @property
