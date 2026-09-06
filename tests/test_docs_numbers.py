@@ -10,6 +10,8 @@ better/worse/tie verdict); ``cell`` below generates them, so the document and th
 import csv
 import itertools
 import json
+import re
+from datetime import datetime
 from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 
@@ -104,6 +106,52 @@ def boxed_in(run: str) -> tuple[int, int]:
     return sum(float(row["fill"]) == (n_cells - 1) / n_cells for row in failed), len(failed)
 
 
+def fill_ratio(run: str) -> float:
+    """Mean fill of a network over the random-play floor on the same board."""
+    return det(run, "fill_mean") / det(f"exp01_random_{board_size(run)}x4", "fill_mean")
+
+
+# --- run.log and progress.csv facts quoted in reports/networks.md ----------------------------
+def log_lines(run: str, marker: str = "") -> list[str]:
+    lines = (DATA / run / "run.log").read_text(encoding="utf-8").splitlines()
+    return [line for line in lines if marker in line]
+
+
+def log_seconds(run: str, marker: str = "") -> float:
+    """Seconds between the first and the last run.log line containing ``marker`` (logging_utils stamps)."""
+    def stamp(line: str) -> datetime:
+        return datetime.strptime(line[:23], "%Y-%m-%d %H:%M:%S,%f")
+
+    lines = log_lines(run, marker)
+    return (stamp(lines[-1]) - stamp(lines[0])).total_seconds()
+
+
+def frontier_path(run: str) -> list[int]:
+    """Curriculum frontier values logged by callbacks.Backplay: the start, then every advance."""
+    lines = log_lines(run, "curriculum:")
+    start = int(re.search(r"frontier (\d+)", lines[0]).group(1))
+    return [start] + [int(re.search(r"-> (\d+)", line).group(1)) for line in lines[1:]]
+
+
+def progress_column(run: str, column: str) -> list[tuple[int, float]]:
+    """(timesteps, value) pairs of one SB3 progress.csv column, rows without the value skipped."""
+    with open(DATA / run / "progress.csv", newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+    return [(int(float(r["time/total_timesteps"])), float(r[column])) for r in rows if r.get(column)]
+
+
+def collapse_points(run: str = "exp04_ppo_4x4") -> tuple[int, int]:
+    """Timesteps from which the curriculum success stays below 1e-3, and from which it stays at 0."""
+    series = progress_column(run, "curriculum/success_rate")
+    last_above, last_positive = (max(t for t, v in series if v >= bound) for bound in (1e-3, 1e-12))
+    return tuple(min(t for t, _ in series if t > last) for last in (last_above, last_positive))
+
+
+NETWORKS_DOC = "reports/networks.md"
+NETWORKS = sorted(p.name for p in DATA.iterdir() if p.name.endswith(("_best", "_eval")))
+NEVER_FINISHED = [r for r in NETWORKS if det(r, "steps_to_complete_mean") is None]
+ON_3X4 = [r for r in NETWORKS if board_size(r) == 3]
+
 CASES = {
     "readme 2^4 success": ("README.md", lambda: f"**{100 * det('exp02d_ppo_2x4_backplay_strict_best'):.1f} %**"),
     "readme 2^4 steps": ("README.md", lambda: f"{det('exp02d_ppo_2x4_backplay_strict_best', 'steps_to_complete_mean'):.1f} steps"),
@@ -141,6 +189,25 @@ CASES = {
     "networks weights": ("reports/networks.md", lambda: " / ".join(f"{mlp_params(c) / 1e6:.2f}M" for c in (16, 81, 256))),
     "networks exp02 boxed in": ("reports/networks.md", lambda: "{} of its {}\n  lost argmax games end with one cell left".format(*boxed_in("exp02_ppo_2x4_best"))),
     "networks exp02d sampling": ("reports/networks.md", lambda: f"{100 * stoch('exp02d_ppo_2x4_backplay_strict_best'):.1f} % when sampling"),
+    "networks exp02d gain": ("reports/networks.md", lambda: f"{100 * (det('exp02d_ppo_2x4_backplay_strict_best') - det('exp02_ppo_2x4_best')):.1f} points more completions"),
+    "networks exp02d moves": ("reports/networks.md", lambda: f"for about {half_up(det('exp02d_ppo_2x4_backplay_strict_best', 'steps_to_complete_mean') - det('exp02_ppo_2x4_best', 'steps_to_complete_mean'))} more"),
+    "networks exp02c gain": ("reports/networks.md", lambda: f"from {100 * det('exp02_ppo_2x4_best'):.1f} % to {100 * det('exp02c_ppo_2x4_long_best'):.1f} %"),
+    "networks exp02b seconds": ("reports/networks.md", lambda: f"from 15 to 1 in {half_up(log_seconds('exp02b_ppo_2x4_backplay', 'curriculum:'))} seconds of"),
+    "networks exp03a foods": ("reports/networks.md", lambda: f"eats about {half_up(foods('exp03a_ppo_3x4_nocur_best'))} cells"),
+    "networks exp03b frontier": ("reports/networks.md", lambda: "logged frontier {} -> {}".format(frontier_path('exp03b_ppo_3x4_backplay')[0], frontier_path('exp03b_ppo_3x4_backplay')[-1])),
+    "networks exp03c frontier": ("reports/networks.md", lambda: "from {} to {} once".format(frontier_path('exp03c_ppo_3x4_backplay_relaxed')[0], frontier_path('exp03c_ppo_3x4_backplay_relaxed')[-1])),
+    "networks exp04 frontier": ("reports/networks.md", lambda: "from {} to {} in {} advances".format(frontier_path('exp04_ppo_4x4')[0], frontier_path('exp04_ppo_4x4')[-1], len(frontier_path('exp04_ppo_4x4')) - 1)),
+    "networks exp04 collapse": ("reports/networks.md", lambda: "from about {:.0f}M moves and to exactly zero from {:.0f}M".format(*(t / 1e6 for t in collapse_points()))),
+    "networks exp04 length": ("reports/networks.md", lambda: f"about {half_up(det('exp04_ppo_4x4_best', 'fill_mean') * summary('exp04_ppo_4x4_best')['n_cells'])} cells (fill {det('exp04_ppo_4x4_best', 'fill_mean'):.3f})"),
+    "networks exp05 seconds": ("reports/networks.md", lambda: f"about {half_up(log_seconds('exp05_bc_4x4'))} s"),
+    "networks exp05 accuracy": ("reports/networks.md", lambda: re.search(r"expert-action accuracy [0-9.]+", log_lines('exp05_bc_4x4')[-1]).group(0)),
+    "networks points short": ("reports/networks.md", lambda: f"{100 - 100 * det('exp02d_ppo_2x4_backplay_strict_best'):.1f} points short"),
+    "networks fewer moves": ("reports/networks.md", lambda: f"{half_up(100 * (1 - det('exp02d_ppo_2x4_backplay_strict_best', 'steps_to_complete_mean') / det('exp01_route_2x4', 'steps_to_complete_mean')))} % fewer moves"),
+    "networks fill ratios": ("reports/networks.md", lambda: "by {:.1f} to {:.1f} times and by {:.1f} times".format(min(map(fill_ratio, ON_3X4)), max(map(fill_ratio, ON_3X4)), fill_ratio('exp04_ppo_4x4_best'))),
+    "networks fill range": ("reports/networks.md", lambda: "{} to {} % full".format(half_up(100 * min(det(r, 'fill_mean') for r in NEVER_FINISHED)), half_up(100 * max(det(r, 'fill_mean') for r in NEVER_FINISHED)))),
+    "networks step change": ("reports/networks.md", lambda: f"changed its step count by {100 * (det('exp01_route_4x4', 'steps_to_complete_mean') - det('exp05b_ppo_4x4_from_bc_best', 'steps_to_complete_mean')) / det('exp01_route_4x4', 'steps_to_complete_mean'):.1f} %"),
+    "networks floor moves": ("reports/networks.md", lambda: f"about {255 * geometric_floor(4):,.0f} moves"),
+    "networks input sizes": ("reports/networks.md", lambda: f"{4 * 16 + 2} numbers on the smallest board and {4 * 256 + 2:,} on the largest"),
 }
 
 
@@ -152,8 +219,6 @@ def test_quoted_number_matches_its_artifact(case):
 
 
 # --- reports/networks.md: every network's cells beside the loop and random baselines -----------
-NETWORKS_DOC = "reports/networks.md"
-NETWORKS = sorted(p.name for p in DATA.iterdir() if p.name.endswith(("_best", "_eval")))
 METRICS = {  # name: (value(run), printer(value), higher is better)
     "completion": (lambda r: 100 * det(r), lambda v: f"{v:.1f} %", True),
     "fill": (lambda r: det(r, "fill_mean"), lambda v: f"{v:.3f}", True),
@@ -203,3 +268,11 @@ def test_mlp_params_matches_the_built_policy():
     cfg = Config(size=2, device="cpu")
     policy = build_model(cfg, make_env(cfg, 2, 0)).policy
     assert sum(p.numel() for p in policy.parameters()) == mlp_params(cfg.n_cells)
+
+
+def test_networks_md_counts_quoted_in_words():
+    """'twice', 'once', 'below 2e-5 at every update' and 'from 15 to 1' in reports/networks.md."""
+    assert len(frontier_path("exp03b_ppo_3x4_backplay")) - 1 == 2
+    assert len(frontier_path("exp03c_ppo_3x4_backplay_relaxed")) - 1 == 1
+    assert frontier_path("exp02b_ppo_2x4_backplay")[::14] == [15, 1]
+    assert max(v for _, v in progress_column("exp05b_ppo_4x4_from_bc", "train/approx_kl")) < 2e-5
