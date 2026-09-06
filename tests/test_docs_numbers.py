@@ -7,12 +7,17 @@ reports/networks.md quotes whole table cells (network score beside both scripted
 better/worse/tie verdict); ``cell`` below generates them, so the document and the check cannot drift.
 """
 
+import csv
 import itertools
 import json
 from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 
 import pytest
+
+from snake4d.config import Config
+from snake4d.train import build_model
+from snake4d.vec_env import make_env
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "reports" / "data"
@@ -86,6 +91,19 @@ def mlp_params(n_cells: int, width: int = 512, actions: int = 8) -> int:
     return 2 * ((obs + 1) * width + (width + 1) * width) + (width + 1) * actions + width + 1
 
 
+def eval_episodes(run: str, deterministic: bool = True) -> list[dict]:
+    """Rows of eval_episodes.csv for one mode (evaluation.write_results stores deterministic as 0/1)."""
+    with open(DATA / run / "eval_episodes.csv", newline="", encoding="utf-8") as handle:
+        return [row for row in csv.DictReader(handle) if row["deterministic"] == str(int(deterministic))]
+
+
+def boxed_in(run: str) -> tuple[int, int]:
+    """(lost argmax episodes that ended with exactly one free cell, all lost argmax episodes)."""
+    n_cells = summary(run)["n_cells"]
+    failed = [row for row in eval_episodes(run) if row["success"] == "0"]
+    return sum(float(row["fill"]) == (n_cells - 1) / n_cells for row in failed), len(failed)
+
+
 CASES = {
     "readme 2^4 success": ("README.md", lambda: f"**{100 * det('exp02d_ppo_2x4_backplay_strict_best'):.1f} %**"),
     "readme 2^4 steps": ("README.md", lambda: f"{det('exp02d_ppo_2x4_backplay_strict_best', 'steps_to_complete_mean'):.1f} steps"),
@@ -121,6 +139,8 @@ CASES = {
     "evaluation floors": ("docs/evaluation.md", lambda: " / ".join(f"{geometric_floor(n):.2f}" for n in (2, 3, 4))),
     "networks floors": ("reports/networks.md", lambda: " / ".join(f"{geometric_floor(n):.2f}" for n in (2, 3, 4))),
     "networks weights": ("reports/networks.md", lambda: " / ".join(f"{mlp_params(c) / 1e6:.2f}M" for c in (16, 81, 256))),
+    "networks exp02 boxed in": ("reports/networks.md", lambda: "{} of its {}\n  lost argmax games end with one cell left".format(*boxed_in("exp02_ppo_2x4_best"))),
+    "networks exp02d sampling": ("reports/networks.md", lambda: f"{100 * stoch('exp02d_ppo_2x4_backplay_strict_best'):.1f} % when sampling"),
 }
 
 
@@ -159,12 +179,13 @@ def cell(run: str, metric: str) -> str:
     value, printer, higher = METRICS[metric]
     loop, rand = (value(f"exp01_{kind}_{board_size(run)}x4") for kind in ("route", "random"))
     v = value(run)
+    if v is None:  # a network that never finished: no score of its own, only the baselines
+        return f"never (loop {printer(loop)}; random {printer(rand)})"
     return (f"**{printer(v)}** (loop {printer(loop)}, {verdict(printer, v, loop, higher)}; "
             f"random {printer(rand)}, {verdict(printer, v, rand, higher)})")
 
 
-@pytest.mark.parametrize("run, metric", [(r, m) for r in NETWORKS for m in METRICS
-                                         if m != "steps" or det(r, "steps_to_complete_mean") is not None])
+@pytest.mark.parametrize("run, metric", [(r, m) for r in NETWORKS for m in METRICS])
 def test_networks_row_quotes_its_cell(run, metric):
     lines = (ROOT / NETWORKS_DOC).read_text(encoding="utf-8").splitlines()
     rows = [line for line in lines if line.startswith("|") and run in line.split("|")[1]]
@@ -176,3 +197,9 @@ def test_geometric_floor_is_the_mean_manhattan_distance(n):
     cells = list(itertools.product(range(n), repeat=4))
     brute = sum(sum(abs(a - b) for a, b in zip(p, q, strict=True)) for p in cells for q in cells) / len(cells) ** 2
     assert geometric_floor(n) == pytest.approx(brute)
+
+
+def test_mlp_params_matches_the_built_policy():
+    cfg = Config(size=2, device="cpu")
+    policy = build_model(cfg, make_env(cfg, 2, 0)).policy
+    assert sum(p.numel() for p in policy.parameters()) == mlp_params(cfg.n_cells)
