@@ -61,6 +61,6 @@ def test_callbacks_are_constructible_without_a_model():
 @pytest.mark.slow
 def test_resume_from_a_saved_model(tmp_path):
     first = run(tiny_config(tmp_path))
-    second = run(tiny_config(tmp_path, model_path=str(first / "final_model.zip"),
-                            run_name="resume"))
+    second = run(tiny_config(tmp_path, model_path="run", run_name="resume"))  # first's run name
     assert (second / "final_model.zip").exists()
+    assert str(first / "best_model.zip") in (second / "run.log").read_text(encoding="utf-8")

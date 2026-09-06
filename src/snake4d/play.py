@@ -11,11 +11,13 @@ Local notes:
   convention of Pella86/Snake4d (https://github.com/Pella86/Snake4d/blob/master/main.py).
   Keys beyond ``2*ndim`` are ignored.
 * A key that targets the neck is ignored (classic snake refuses reversals); walls and body kill.
-* Cells are scaled so the montage is about ``WINDOW_PX`` wide on every board size, and the tile
-  rows/columns carry ``z``/``w`` labels.  Rendering is one ``pygame.surfarray.make_surface`` of the
-  RGB montage (https://pyga.me/docs/ref/surfarray.html), no per-cell draw loop; text uses the
-  built-in font (``SysFont(None, size)``, https://pyga.me/docs/ref/font.html); ``Clock.tick(fps)``
-  paces the loop (https://pyga.me/docs/ref/time.html#pygame.time.Clock.tick).
+* Cells are scaled so the montage's larger side is about ``WINDOW_PX`` on every board, the window
+  is at least ``WINDOW_PX`` wide so the two HUD lines fit, and the tile rows/columns carry
+  ``z``/``w`` labels.  Rendering is one ``pygame.surfarray.make_surface`` of the RGB montage
+  (surfarray arrays are indexed x first, then y: https://pyga.me/docs/ref/surfarray.html), no
+  per-cell draw loop; text uses the default font (``SysFont(None, size)`` falls back to pygame's
+  built-in font, https://pyga.me/docs/ref/font.html); ``Clock.tick(fps)`` paces the loop
+  (https://pyga.me/docs/ref/time.html#pygame.time.Clock.tick).
 """
 
 import logging
@@ -107,7 +109,8 @@ class Window:
         self.cell = max(MIN_CELL_PX, min(WINDOW_PX // rows, WINDOW_PX // cols))
         self.margin = LABEL_PX if cfg.ndim >= 3 else 0  # room for the z / w tile labels
         height, width = to_rgb(blank, self.cell, LINE_PX).shape[:2]
-        self.screen = pygame.display.set_mode((width + self.margin, height + self.margin + HUD_PX))
+        self.screen = pygame.display.set_mode((max(width + self.margin, WINDOW_PX),
+                                               height + self.margin + HUD_PX))
         pygame.display.set_caption(caption)
         self.font = pygame.font.SysFont(None, FONT_PX)
         self.clock = pygame.time.Clock()

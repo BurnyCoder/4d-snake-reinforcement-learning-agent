@@ -35,6 +35,7 @@ from stable_baselines3.common.vec_env import VecEnv
 
 from snake4d.callbacks import Backplay, FillLogger
 from snake4d.config import Config
+from snake4d.evaluation import model_zip
 from snake4d.logging_utils import make_run_dir, setup_logging
 from snake4d.vec_env import make_env
 
@@ -105,7 +106,8 @@ def run(cfg: Config) -> Path:
         # vf_coef, max_grad_norm, the network shape and the seed keep the checkpoint's values:
         # https://stable-baselines3.readthedocs.io/en/master/guide/save_format.html
         torch.set_num_threads(cfg.torch_threads)
-        model = MaskablePPO.load(cfg.model_path, env=env, device=cfg.device, custom_objects={
+        path = model_zip(cfg)  # a .zip, or the evaluated checkpoint of the run named model_path
+        model = MaskablePPO.load(str(path), env=env, device=cfg.device, custom_objects={
             "learning_rate": LinearSchedule(cfg.lr_start, cfg.lr_end, 1.0),
             "clip_range": LinearSchedule(cfg.clip_start, cfg.clip_end, 1.0),
             "ent_coef": cfg.ent_coef, "gamma": cfg.gamma, "target_kl": cfg.target_kl,
@@ -113,7 +115,7 @@ def run(cfg: Config) -> Path:
         })
         logger.info("resumed %s: this run's schedules, ent_coef, gamma, target_kl, n_epochs and"
                     " rollout shape override the checkpoint; gae_lambda, vf_coef, max_grad_norm,"
-                    " net width and seed keep its values", cfg.model_path)
+                    " net width and seed keep its values", path)
     else:
         model = build_model(cfg, env)
     model.set_logger(configure(str(run_dir), ["stdout", "log", "csv", "tensorboard"]))

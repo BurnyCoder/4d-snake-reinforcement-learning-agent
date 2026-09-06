@@ -86,8 +86,11 @@ def write_up(name: str, reports_dir: Path = REPORTS) -> str | None:
 
 def base_run(run_cfg: dict) -> str | None:
     """The run a fine-tune started from (its config's ``model_path``), e.g. ``exp05_bc_4x4``."""
+    model_path = run_cfg.get("model_path", "")
+    if re.fullmatch(r"[A-Za-z0-9_]+", model_path):  # a bare run name (evaluation.model_zip)
+        return model_path
     pattern = r"_(?:train|imitate)_([A-Za-z0-9_]+?)(?:-\d+)?[\\/][^\\/]+\.zip$"
-    found = re.search(pattern, run_cfg.get("model_path", ""))
+    found = re.search(pattern, model_path)
     return found.group(1) if found else None
 
 
