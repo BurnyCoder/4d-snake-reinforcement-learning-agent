@@ -223,9 +223,10 @@ def run(cfg: Config, pdf: bool = False, reports_dir: Path = REPORTS) -> Path:
     """Phase entry point: figures for every training run, data copies, the table, optional PDF."""
     run_dir = make_run_dir(cfg, "report")
     logger = setup_logging(run_dir)
-    runs = sorted(p for p in Path(cfg.runs_dir).iterdir()  # report/publish runs are not experiments
+    runs = sorted(p for p in Path(cfg.runs_dir).iterdir()  # only bench/train/imitate/evaluate runs
                   if p.is_dir() and (p / "config.json").exists()
-                  and not any(tag in p.name for tag in ("_report_", "_publish_")))
+                  and not any(tag in p.name for tag in ("_report_", "_publish_", "_play_",
+                                                        "_watch_")))
     rows = []
     for source in runs:
         try:

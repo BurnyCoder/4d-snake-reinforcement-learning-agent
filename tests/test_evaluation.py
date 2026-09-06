@@ -7,8 +7,20 @@ from sb3_contrib.common.maskable.utils import is_masking_supported
 
 from snake4d.agents import RandomMaskedPolicy, RoutePolicy
 from snake4d.config import Config
-from snake4d.evaluation import evaluate, run, summarize
+from snake4d.evaluation import evaluate, model_zip, run, summarize
 from snake4d.vec_env import make_env
+
+
+def test_model_path_is_a_file_or_the_newest_run_of_that_name(tmp_path):
+    older, newer = tmp_path / "20260101-000000_train_foo", tmp_path / "20260102-000000_train_foo"
+    for run_dir in (older, newer):
+        run_dir.mkdir()
+        (run_dir / "best_model.zip").write_bytes(b"")
+    assert model_zip(Config(runs_dir=str(tmp_path), model_path="foo")) == newer / "best_model.zip"
+    explicit = str(older / "best_model.zip")
+    assert model_zip(Config(model_path=explicit)) == older / "best_model.zip"
+    with pytest.raises(FileNotFoundError, match="bar"):
+        model_zip(Config(runs_dir=str(tmp_path), model_path="bar"))
 
 
 def test_eval_env_supports_masking_and_seeds_reset():

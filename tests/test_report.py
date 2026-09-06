@@ -62,9 +62,10 @@ def test_report_phase_writes_table_figures_and_data(tmp_path):
     runs = tmp_path / "runs"
     _train_run(runs)
     _evaluate_run(runs)
-    published = runs / "20260904-140000_publish_run"  # not an experiment: stays out of the table
-    published.mkdir()
-    Config(size=2, ndim=4).to_json(published / "config.json")
+    for phase in ("publish", "watch"):  # not experiments: they stay out of the table and data
+        other = runs / f"20260904-140000_{phase}_run"
+        other.mkdir()
+        Config(size=2, ndim=4).to_json(other / "config.json")
     reports = tmp_path / "reports"
     (reports / "experiments").mkdir(parents=True)
     (reports / "experiments" / "exp02_ppo_2x4.md").write_text("# exp02\n", encoding="utf-8")
@@ -72,7 +73,8 @@ def test_report_phase_writes_table_figures_and_data(tmp_path):
     table = run(cfg, reports_dir=reports)
     text = table.read_text(encoding="utf-8")
     assert "exp02_ppo_2x4" in text and "exp01_route_2x4" in text and "| run " in text
-    assert "publish" not in text
+    assert "publish" not in text and "watch" not in text
+    assert not (reports / "data" / "run").exists()
     assert "[exp02_ppo_2x4](experiments/exp02_ppo_2x4.md)" in text
     assert (reports / "figures" / "exp02_ppo_2x4_curves.png").exists()
     data = reports / "data" / "exp02_ppo_2x4"
