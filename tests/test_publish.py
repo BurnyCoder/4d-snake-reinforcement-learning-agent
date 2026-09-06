@@ -4,8 +4,6 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
-import pytest
-
 from snake4d import publish
 from snake4d.config import Config
 
@@ -39,7 +37,8 @@ def _runs(root: Path, name: str, phase: str = "train", zip_name: str = "best_mod
     suffix = "eval" if phase == "imitate" else "best"
     eval_dir = root / f"20260904-130000_evaluate_{name}_{suffix}"
     eval_dir.mkdir()
-    (eval_dir / "summary.json").write_text(json.dumps(_summary()), encoding="utf-8")
+    crlf = json.dumps(_summary(), indent=2).replace("\n", "\r\n")  # as Windows text mode writes it
+    (eval_dir / "summary.json").write_bytes(crlf.encode("utf-8"))
     (eval_dir / "eval_episodes.csv").write_text(
         "seed,deterministic,success,fill,length,return\n0,1,1,1.0,40,24.0\n", encoding="utf-8")
     return run_dir
@@ -112,8 +111,12 @@ def test_model_card_metadata_body_and_negative_result():
     assert "Negative result" in negative and "steps_to_complete" not in negative
     assert "| never |" in negative and "| sampling |" not in negative
     clone = publish.model_card("exp05b_ppo_4x4_from_bc", "train", cfg, _summary(), versions,
-                               EXP05B, "best_model.zip", base_model=EXP05)
+                               EXP05B, "best_model.zip", base_model=EXP05,
+                               write_up_url="https://example.org/exp05")
     assert f"base_model: {EXP05}" in clone and "Use deterministic mode" in clone
+    assert "analysis: https://example.org/exp05" in clone
+    assert "the learning curves and the fill histogram" in clone
+    assert "An MLP policy with two hidden layers of 512 units" in clone
 
 
 def test_publish_phase_stages_uploads_and_collects(tmp_path):
@@ -135,10 +138,16 @@ def test_publish_phase_stages_uploads_and_collects(tmp_path):
                               "eval/summary.json", "versions.json"]
     staged = set(uploads[EXP05B])
     assert {"figures/exp05b_ppo_4x4_from_bc_curves.png", "train/progress.csv"} <= staged
-    card_bytes = (run_dir / "staging" / EXP05B.split("/")[1] / "README.md").read_bytes()
+    staged_dir = run_dir / "staging" / EXP05B.split("/")[1]
+    card_bytes = (staged_dir / "README.md").read_bytes()
     assert b"\r" not in card_bytes  # LF endings even on Windows
     card = card_bytes.decode("utf-8")
     assert f"base_model: {EXP05}" in card and "figures/exp05b_ppo_4x4_from_bc_curves.png" in card
+    summary_bytes = (staged_dir / "eval" / "summary.json").read_bytes()
+    assert b"\r" not in summary_bytes and json.loads(summary_bytes)["n_cells"] == 16  # CRLF -> LF
+    clone_dir = run_dir / "staging" / EXP05.split("/")[1]
+    clone_card = (clone_dir / "README.md").read_text(encoding="utf-8")
+    assert "262,144 expert samples, 20 epochs, Adam 0.001" in clone_card  # n_envs * n_steps, config
     items = [c for c in api.calls if c[0] == "add_collection_item"]
     assert [i[1] for i in items] == created
     assert all(i[4] is True and len(i[3]) <= 500 for i in items)
@@ -152,9 +161,11 @@ def test_publish_phase_stages_uploads_and_collects(tmp_path):
     assert sum(c[0] == "create_collection" for c in api.calls) == 1
 
 
-@pytest.mark.parametrize("name", ["exp02_ppo_2x4", "exp05_bc_4x4"])
-def test_publish_names_default_covers_every_evaluated_network(name):
-    assert name in Config().publish_names
+def test_publish_names_default_is_exactly_the_evaluated_networks():
+    data = ROOT / "reports" / "data"
+    evaluated = [p for p in data.iterdir() if p.name.endswith(("_best", "_eval"))]
+    archived = {p.name.removesuffix("_best").removesuffix("_eval") for p in evaluated}
+    assert archived == set(Config().publish_names) and len(archived) == 10
 
 
 def test_collection_description_respects_the_hub_limit():
