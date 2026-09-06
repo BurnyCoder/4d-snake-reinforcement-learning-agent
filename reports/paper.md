@@ -1,6 +1,6 @@
 # Completing 4D Snake with Masked PPO and a Hamiltonian Reverse Curriculum
 
-Repository: https://github.com/BurnyCoder/4d-snake-rl - all numbers below come from the run
+Repository: https://github.com/BurnyCoder/4d-snake-reinforcement-learning-agent - all numbers below come from the run
 artifacts copied to `reports/data/` and the per-experiment write-ups in `reports/experiments/`.
 
 ## Abstract

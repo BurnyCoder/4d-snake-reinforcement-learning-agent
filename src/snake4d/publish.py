@@ -34,7 +34,7 @@ from snake4d.config import Config
 from snake4d.logging_utils import make_run_dir, setup_logging
 from snake4d.report import REPORTS, run_name
 
-GITHUB = "https://github.com/BurnyCoder/4d-snake-rl"
+GITHUB = "https://github.com/BurnyCoder/4d-snake-reinforcement-learning-agent"
 HUB = "https://huggingface.co"  # repo pages live at HUB/<namespace>/<repo>
 MODEL_FILES = ("best_model.zip", "bc_model.zip", "final_model.zip")  # evaluated checkpoint first
 NOTE_LIMIT = 500  # add_collection_item caps a note at 500 characters (collections guide)
@@ -176,7 +176,7 @@ def model_card(name: str, phase: str, run_cfg: dict, summary: dict, versions: di
              "The observation is this repository's `4*C + 2` float vector and the action space its "
              f"`2*ndim` masked moves ([docs/game_rules.md]({docs}/game_rules.md)), so the "
              "checkpoint runs inside `snake4d`'s environment:", "", "```bash",
-             f"git clone {GITHUB}.git && cd 4d-snake-rl && uv sync",
+             f"git clone {GITHUB}.git && cd {GITHUB.rsplit('/', 1)[-1]} && uv sync",
              f"hf download {repo_id} {zip_name} --local-dir weights",
              f"uv run snake4d evaluate --set model_path=weights/{zip_name} --set size={size} "
              f"--set ndim={ndim}",
