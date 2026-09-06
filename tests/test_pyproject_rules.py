@@ -23,3 +23,9 @@ def test_torch_comes_from_the_explicit_cu130_index():
 
 def test_python_is_pinned_to_3_13():
     assert PYPROJECT["project"]["requires-python"] == ">=3.13,<3.14"
+
+
+def test_hub_client_is_an_optional_group():
+    runtime = " ".join(PYPROJECT["project"]["dependencies"]).lower()
+    assert "huggingface" not in runtime
+    assert any("huggingface-hub" in d for d in PYPROJECT["dependency-groups"]["hub"])
