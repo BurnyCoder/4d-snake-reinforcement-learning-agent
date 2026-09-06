@@ -30,10 +30,10 @@ counts against the built model.
 | RL algorithm and reward | MaskablePPO on `+1` food, `-1` death, `+10` win, `-0.001` per step; discount 0.99, entropy bonus 0.01, linearly decaying learning rate and clip range ([docs/rl_design.md](../docs/rl_design.md); PPO: Schulman et al. 2017, https://arxiv.org/abs/1707.06347). | Trial and error across thousands of games played at once. Moves that led to more reward get more probability next time, the rest less. A small bonus for variety keeps it exploring. |
 | Imitation algorithm | Behaviour cloning of the route follower: cross-entropy of the expert move under the masked policy, Adam 1e-3, 20 epochs over 262,144 samples ([imitation.py](../src/snake4d/imitation.py), [exp05](experiments/exp05_bc_4x4.md); Pomerleau 1988, https://proceedings.neurips.cc/paper/1988/hash/812b4ba287f5ee0bc9d43bbf5bbe87fb-Abstract.html). | Flashcards. Show the board, reveal the teacher's move, adjust the weights until the net gives the same answer. The teacher is a fixed loop through every cell. |
 | Training data | Nothing stored: the batched simulator generates experience live, tens of thousands of moves per second (the `fps` column of [all_experiments.md](all_experiments.md); [docs/benchmark.md](../docs/benchmark.md)). | There is no dataset. The game itself is the data source. |
-| Curriculum | Backplay along the Hamiltonian route: 80 % of training episodes start as a route segment near a frontier that begins one cell short of a full board, and the frontier moves back only when the success rate clears a gate ([docs/rl_design.md](../docs/rl_design.md); Backplay: Resnick et al. 2018, https://arxiv.org/abs/1807.06919; success-gated advance: Salimans and Chen 2018, https://arxiv.org/abs/1812.03381). | Practise the last few moves of the game first, then the last ten, then twenty, and so on. Evaluation always starts from length 1. |
+| Curriculum | Backplay along the Hamiltonian route: 80 % of training episodes start as a route segment near a frontier that begins one cell short of a full board (two short on the odd 3^4 board, whose route omits a corner), and the frontier moves back only when the success rate clears a gate ([docs/rl_design.md](../docs/rl_design.md); Backplay: Resnick et al. 2018, https://arxiv.org/abs/1807.06919; success-gated advance: Salimans and Chen 2018, https://arxiv.org/abs/1812.03381). | Practise the last few moves of the game first, then the last ten, then twenty, and so on. Evaluation always starts from length 1. |
 | Baselines | Route follower (walks the Hamiltonian cycle and completes every board; on the odd 3^4 board the cycle covers all cells but one corner and a timed detour takes the corner, [docs/game_rules.md](../docs/game_rules.md)) and masked random play, evaluated by the same protocol: [exp01](experiments/exp01_baselines.md). Cycle following as a guaranteed win: twanvl/snake, https://github.com/twanvl/snake; johnflux 2015, https://johnflux.com/2015/05/02/nokia-6110-part-3-algorithms/. | The loop is the safe-but-slow reference every network is measured against. Random is what no skill looks like. |
-| Evaluation | 100 episodes x 3 seeds through masked `evaluate_policy`, a deterministic and a sampling pass ([docs/evaluation.md](../docs/evaluation.md)); this page shows the deterministic pass. | Every number below comes from 300 evaluation games, 100 per seed, with the network always taking its top-scored move. |
-| Efficiency metrics | Steps per food, geometric floor (2.00 / 3.56 / 5.00 moves on 2^4 / 3^4 / 4^4), non-eating move share and won within `4C` moves: the derived-metrics section of [docs/evaluation.md](../docs/evaluation.md); the step-capped win rate follows AlphaSnake, https://arxiv.org/abs/2211.09622. | Steps per food is how far the snake walks between meals. Times floor is roughly how many times farther than a player who always took the shortest path to the food. Non-eating moves is the share of moves that ate nothing. |
+| Evaluation | 100 episodes x 3 seeds through masked `evaluate_policy`, a deterministic and a sampling pass for trained models and one deterministic pass for the scripted baselines ([docs/evaluation.md](../docs/evaluation.md)); this page shows the deterministic pass. | Every number below comes from 300 evaluation games, 100 per seed, with the network always taking its top-scored move. |
+| Efficiency metrics | Steps per food, geometric floor (2.00 / 3.56 / 5.00 moves on 2^4 / 3^4 / 4^4), non-eating move share and won within `4C` moves: the derived-metrics section of [docs/evaluation.md](../docs/evaluation.md); the step-capped win rate follows AlphaSnake, whose Table 1 reports wins within 1,200 steps on a 10x10 board, https://arxiv.org/abs/2211.09622. | Steps per food is how far the snake walks between meals. Times floor is roughly how many times farther than a player who always took the shortest path to the food. Non-eating moves is the share of moves that ate nothing. |
 
 ## The ten networks, scores beside baselines
 
@@ -60,11 +60,11 @@ What happened, one line per network (details and figures in the write-ups):
 - exp02: climbs quickly and then plateaus ([write-up](experiments/exp02_ppo_2x4.md)); 23 of its 37
   lost argmax games end with one cell left, the snake boxed in
   (`data/exp02_ppo_2x4_best/eval_episodes.csv`).
-- exp02b: the loose gate ran the curriculum frontier from 15 to 1 in about fifteen seconds of
-  training (`data/exp02b_ppo_2x4_backplay/run.log`), so it taught nothing; same as plain PPO within
-  noise (write-up).
+- exp02b: the loose gate ran the curriculum frontier from 15 to 1 in 15 seconds of training
+  (`data/exp02b_ppo_2x4_backplay/run.log`), so it taught nothing; same as plain PPO within noise
+  (write-up).
 - exp02c: four times the budget lifts completion from 87.7 % to 93.3 %.
-- exp02d: the best genuinely learned agent: 8.6 points more completions than exp02 for about 9 more
+- exp02d: the best genuinely learned agent: 8.7 points more completions than exp02 for about 9 more
   moves per game, and 96.0 % when sampling instead of taking the argmax (`summary.json`).
 - exp03a: eats about 45 cells and then traps itself; its best single game reached 74 of 81 cells
   (`data/exp03a_ppo_3x4_nocur/episodes.json`, [write-up](experiments/exp03_ppo_3x4.md)).
@@ -74,11 +74,13 @@ What happened, one line per network (details and figures in the write-ups):
 - exp03c: the relaxed gate moved the logged frontier from 80 to 76 once
   (`data/exp03c_ppo_3x4_backplay_relaxed/run.log`) and never again; endgame practice did not
   transfer to games started from length 1 (write-up).
-- exp04: the frontier went from 255 to 199 in seven advances (`data/exp04_ppo_4x4/run.log`), then
-  the curriculum-start success fell to zero from about 73M moves; the
-  [write-up](experiments/exp04_ppo_4x4.md) attributes the collapse to learning-rate, clip and
-  entropy schedules tied to the 100M budget rather than to curriculum progress. From length 1 the
-  policy learned safe foraging to about 100 cells (fill 0.40) but not coverage.
+- exp04: the frontier went from 255 to 199 in 7 advances (`data/exp04_ppo_4x4/run.log`); the
+  curriculum-start success then fell below one win per thousand games
+  from about 73M moves and to exactly zero from 77M (`progress.csv`). The
+  [write-up](experiments/exp04_ppo_4x4.md) attributes the collapse to the learning-rate and
+  clip-range schedules being tied to the 100M budget rather than to curriculum progress (the entropy
+  coefficient is a constant 0.01, `train.py`). From length 1 the policy learned safe foraging to a
+  length of about 103 cells (fill 0.401) but not coverage.
 - exp05: expert-action accuracy 1.000 after cloning (`data/exp05_bc_4x4/run.log`); a memorised
   head-position-to-move lookup with the loop's exact step count
   ([write-up](experiments/exp05_bc_4x4.md)).
@@ -109,7 +111,7 @@ What the comparisons say:
 
 - On 16 cells every network beats random on every measure and beats the loop on every efficiency
   measure, but none reaches the loop's 100 % completion. The strict-curriculum agent comes closest,
-  3.7 points short, while finishing games in a third fewer moves than the loop.
+  3.7 points short, while finishing games in 34 % fewer moves than the loop.
 - On 81 and 256 cells the from-scratch networks tie random on completion at 0 %. They beat random on
   fill by 2.4 to 2.5 times and by 5.2 times, and they beat the loop on steps per food, floor
   multiple and non-eating share by a wide margin, but only over the games they survived, which end
@@ -118,4 +120,5 @@ What the comparisons say:
   100 points of completion, and fine-tuning changed its step count by 0.2 %.
 - The gap nobody fills: on 4^4 the network that walks efficiently, 5.57 moves per meal at 1.11 times
   the floor, never finishes, and the network that always finishes walks 64.5 moves per meal, 12.9
-  times the floor. A player with both would finish in about 1,300 moves instead of 16,448.
+  times the floor. A player with both would finish in about 1,275 moves (255 foods x 5.00 moves)
+  instead of 16,448.

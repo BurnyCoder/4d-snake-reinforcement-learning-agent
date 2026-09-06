@@ -40,9 +40,9 @@ Figures: `reports/figures/exp04_ppo_4x4_curves.png`, `exp04_ppo_4x4_fill_hist.pn
   53.7M steps (gate success 0.80-0.84 each time), then the frontier stayed at 199 and the success
   rate of the 57-cell-free endgame *fell to zero* in the last quarter of training. The learning rate decays
   linearly to 1e-5 over the whole 100M budget regardless of curriculum progress, so by the time
-  the frontier reached the hardest states the policy could no longer adapt; the entropy bonus and
-  the clip range decay the same way. Tying the schedules to the total budget was a design error
-  for a curriculum whose pace is unknown in advance.
+  the frontier reached the hardest states the policy could no longer adapt; the clip range decays
+  the same way (the entropy coefficient is a constant 0.01, `train.py`). Tying the schedules to the
+  total budget was a design error for a curriculum whose pace is unknown in advance.
 - **Distribution shift is visible.** Fill on curriculum starts (0.88, `episodes.json`) never transferred to the
   true start (0.38-0.40): a snake laid along the cycle is in a state the true-start policy never
   produces, and the true-start episodes (20 % of resets) learned no faster than plain PPO did on
@@ -54,8 +54,8 @@ Figures: `reports/figures/exp04_ppo_4x4_curves.png`, `exp04_ppo_4x4_fill_hist.pn
 
 ## Decisions and next steps
 
-1. Decouple the schedules from the curriculum: constant learning rate, clip range and entropy
-   until the frontier reaches 1, then decay; or make the decay a function of the frontier.
+1. Decouple the schedules from the curriculum: constant learning rate and clip range until the
+   frontier reaches 1, then decay; or make the decay a function of the frontier.
 2. Warm-start by imitation: behaviour-clone the policy on (observation, action) pairs from the
    route follower (which is available in unlimited quantity from the batched env), then fine-tune
    with MaskablePPO - the network then starts from a policy that already completes the board and

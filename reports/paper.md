@@ -122,8 +122,8 @@ setup -> results -> learnings:
   (`reports/experiments/exp03_ppo_3x4.md`).
 - exp04 - 4^4 (256 cells): Backplay (gate 0.8, window 16, step 8) for 100M steps / 54 min:
   seven frontier advances (255 -> 199) between 18.6M and 53.7M steps, none in the remaining
-  46M, and the curriculum success rate fell to 0 from about 73M steps as the learning rate,
-  clip range and entropy decayed towards their end values; true-start fill 0.40 (best episode
+  46M, and the curriculum success rate fell to 0 from about 73M steps as the learning rate and
+  clip range decayed towards their end values; true-start fill 0.40 (best episode
   0.66), completion 0.000 (`reports/experiments/exp04_ppo_4x4.md`, `reports/data/exp04_ppo_4x4*/`).
 - exp05 - 4^4 imitation warm start: behaviour cloning of the route follower reaches 1.000
   expert-action accuracy and the cloned network completes the board in 1.000 +- 0.000 of
@@ -150,8 +150,9 @@ On 81 and 256 cells the same recipe fails, for two identifiable reasons. First, 
 starting states - snakes laid along the Hamiltonian cycle - are not states the true-start policy
 ever reaches (cf. Florensa et al. 2017, who adapt the start distribution to the agent's
 performance), so skill on curriculum starts (0.88-0.99 fill; 60-84 % success at each gate
-crossing before the collapse) did not transfer to the true start (0.4-0.55 fill). Second, the learning-rate, clip-range and entropy schedules
-decay with the total budget, not with curriculum progress, so the 4^4 agent lost the ability to
+crossing before the collapse) did not transfer to the true start (0.4-0.55 fill). Second, the
+learning-rate and clip-range schedules decay with the total budget, not with curriculum progress
+(the entropy coefficient is constant), so the 4^4 agent lost the ability to
 adapt exactly when the frontier reached the hardest states and its endgame success fell to zero.
 The odd 3^4 board adds the parity constraint and a two-step corner detour that was never learned.
 
