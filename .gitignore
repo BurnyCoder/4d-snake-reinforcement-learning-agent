@@ -16,6 +16,9 @@ wheels/
 # into reports/data/ by `snake4d report`)
 runs/
 
+# Checkpoints downloaded from the Hub (README: `hf download ... --local-dir weights`)
+weights/
+
 # Tool caches
 .pytest_cache/
 .ruff_cache/

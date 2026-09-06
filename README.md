@@ -59,13 +59,13 @@ defaults < `.env` < `--env-file experiments/<exp>.env` < `--set field=value`.
 uv run snake4d play                              # human play on the 4^4 board (--set size=2 for the small one): WASD = x/y, IJKL = z/w, R restart, Esc quit
 uv run snake4d watch --set model_path=exp02d_ppo_2x4_backplay_strict   # watch the best learned network play 2^4 (a run name under runs/, or a .zip path)
 uv run snake4d watch --set model_path=exp04_ppo_4x4                    # the 4^4 network trained from scratch: an efficient forager that never finishes
-uv run snake4d watch --set model_path=exp05b_ppo_4x4_from_bc --set watch_speed=64   # the 4^4 finisher (a cloned loop follower; 16k-move games)
+uv run snake4d watch --set model_path=exp05b_ppo_4x4_from_bc --set watch_speed=64   # the 4^4 finisher (the PPO-fine-tuned clone of the loop follower; 16k-move games)
 uv run snake4d watch --set policy=route                                # the scripted Hamiltonian loop itself
 uv run snake4d bench                             # throughput grid -> docs/benchmark.md
 uv run snake4d evaluate --set policy=route       # scripted baseline on the default 4^4 board
 uv run snake4d train --env-file experiments/exp02_ppo_2x4.env
 uv run snake4d imitate --env-file experiments/exp05_bc_4x4.env   # behaviour-clone the route follower -> bc_model.zip
-uv run snake4d train --set model_path=runs/<imitate run>/bc_model.zip   # PPO fine-tune from the clone
+uv run snake4d train --set model_path=exp05_bc_4x4   # PPO fine-tune from the clone (the imitate run's name, or a path to its bc_model.zip)
 uv run snake4d evaluate --set model_path=runs/<run>/best_model.zip --set size=2 --set ndim=4
 uv run snake4d report                            # figures + reports/all_experiments.md
 uv run --group docs snake4d report --pdf         # ... plus reports/paper.pdf
@@ -88,8 +88,8 @@ argmax; `SNAKE_WATCH_GIF=1` records the first game as `runs/<ts>_watch_<name>/ga
 Which network to watch: [reports/networks.md](reports/networks.md) compares all ten. The
 strict-curriculum 2^4 agent exp02d is the best genuinely learned one, completing 96.3 % of its
 games in 43.5 moves against the loop follower's 65.9; the two 4^4 networks that always finish are
-behaviour-cloned copies of that loop, and the 4^4 network trained from scratch walks efficiently
-but never finishes (fill 0.40).
+a behaviour-cloned copy of that loop and its PPO fine-tune, which changed almost nothing, and the
+4^4 network trained from scratch walks efficiently but never finishes (fill 0.40).
 
 ![exp02d playing one 2^4 game](reports/figures/exp02d_ppo_2x4_backplay_strict_game.gif)
 

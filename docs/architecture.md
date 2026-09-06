@@ -20,7 +20,7 @@ the per-row dicts (`fill`, `is_success`, `start_len`); `reset(rows)` restarts th
 (with curriculum starts when a frontier is set); `board(row)` returns cell codes for rendering.
 
 - `env.SnakeEnv(gym.Env)` = `SnakeBatch(n=1)` behind the Gymnasium API. Used by the env checkers,
-  human play, and the DummyVecEnv/SubprocVecEnv rows of the benchmark.
+  human play, the watch phase, and the DummyVecEnv/SubprocVecEnv rows of the benchmark.
 - `vec_env.SnakeVecEnv(VecEnv)` = `SnakeBatch(n=N)` behind stable-baselines3's VecEnv API.
   `vec_env.make_env(cfg, n_envs, seed, monitor_path)` wraps it in `VecMonitor`, which writes
   `info["episode"] = {r, l, t, is_success, fill, start_len}` at episode end and the
@@ -51,10 +51,11 @@ auto-resetting finished rows with `terminal_observation` and `TimeLimit.truncate
 `main.py` builds one `Config` (defaults -> `.env` -> `--env-file` -> `--set`) and calls the phase's
 `run(cfg)`. Phases import each other's modules lazily so `play` never requires torch (it is
 imported defensively once, to record the CUDA device in `versions.json`; `watch` needs it to load
-a checkpoint) and `train` never imports pygame. `evaluation.model_zip` resolves `SNAKE_MODEL_PATH`:
-an existing file is used as is, otherwise the name selects the newest `<ts>_train_<name>` or
-`<ts>_imitate_<name>` directory under `runs_dir` and its evaluated checkpoint
-(`publish.find_run` / `publish.model_file`).
+a checkpoint) and `train` never imports pygame. `evaluation.model_zip` resolves `SNAKE_MODEL_PATH`
+for `evaluate`, `watch` and `train`: an existing file is used as is, otherwise the name selects the
+newest `<ts>_train_<name>` or `<ts>_imitate_<name>` directory under `runs_dir` and its evaluated
+checkpoint, `best_model.zip`, else `bc_model.zip`, else `final_model.zip` (`publish.find_run` /
+`publish.model_file`).
 
 ## Data flow of a training step
 
