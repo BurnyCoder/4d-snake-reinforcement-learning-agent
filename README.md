@@ -149,7 +149,8 @@ Known pitfalls (CUDA wheels, Windows file locks, masking errors): [docs/troubles
 
 The cross-experiment table is generated in [reports/all_experiments.md](reports/all_experiments.md);
 each experiment's write-up is under [reports/experiments/](reports/experiments/); the paper is
-[reports/paper.md](reports/paper.md) / [reports/paper.pdf](reports/paper.pdf).
+[reports/paper.md](reports/paper.md) / [reports/paper.pdf](reports/paper.pdf); all ten trained
+networks beside both scripted baselines, in plain words: [reports/networks.md](reports/networks.md).
 
 | board | route follower ([exp01](reports/data/exp01_route_4x4/summary.json)) | random legal play ([exp01](reports/data/exp01_random_4x4/summary.json)) | best learned agent | write-up, data |
 |---|---|---|---|---|

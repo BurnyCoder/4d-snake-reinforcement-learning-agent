@@ -134,7 +134,9 @@ setup -> results -> learnings:
   cloning loss) gives PPO nothing to compare, so fine-tuning needs deliberate exploration
   (`reports/experiments/exp05_bc_4x4.md`, `reports/data/exp05*`).
 
-The generated cross-run table is `reports/all_experiments.md`.
+The generated cross-run table is `reports/all_experiments.md`; `reports/networks.md` puts every
+trained network beside the two scripted baselines in plain words (completion, fill, steps, and
+steps per food against a geometric floor).
 
 ## 6. Discussion
 

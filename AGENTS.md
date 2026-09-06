@@ -12,13 +12,16 @@ changing it. Do not duplicate README content here.)
 - Configuration is the flat dataclass in `config.py`; every knob is a `SNAKE_<FIELD>` key in
   `.env` (see `.env.example`). Experiments are `experiments/expNN_<name>.env` override files.
 - Tests live in `tests/` (pytest markers `slow`, `gpu`). Docs in `docs/`, experiment write-ups in
-  `reports/experiments/` (hand-written prose, one file per experiment), generated figures in
+  `reports/experiments/` (hand-written prose, one file per experiment), the hand-written
+  cross-network comparison `reports/networks.md` (one row per evaluated network; its score cells
+  are printed exactly as `tests/test_docs_numbers.py` formats them), generated figures in
   `reports/figures/`, small copies of run artifacts in `reports/data/`, the generated table in
   `reports/all_experiments.md`; run artifacts in `runs/` (ignored): `run.log` (phase log),
   SB3's `log.txt`/`progress.csv`, `eval/evaluations.npz`, models.
 - Adding an experiment: write `experiments/expNN_<name>.env` (overrides only), run
   `uv run snake4d train --env-file ...`, then `uv run snake4d report`, then write
-  `reports/experiments/expNN_<name>.md` (question, hypothesis, setup, results, learnings).
+  `reports/experiments/expNN_<name>.md` (question, hypothesis, setup, results, learnings) and the
+  network's row in `reports/networks.md`.
 
 ## Commands
 
