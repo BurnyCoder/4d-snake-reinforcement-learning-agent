@@ -31,6 +31,7 @@ uv run pytest -m "not slow and not gpu"
 uv run pytest -m gpu
 uv run ruff check src tests
 uv run snake4d <bench|play|train|imitate|evaluate|report|pipeline> [--env-file FILE] [--set field=value]
+uv run --group hub snake4d publish   # Hub repos + collection for SNAKE_PUBLISH_RUNS (needs `hf auth login`)
 ```
 
 ## Rules
@@ -49,7 +50,9 @@ uv run snake4d <bench|play|train|imitate|evaluate|report|pipeline> [--env-file F
   `tests/test_docs_generated.py` guard both rules.
 - Log through `logging_utils.setup_logging` (timestamped file + terminal); never bare `print`.
 - Never copy code from unlicensed repositories (see THIRD_PARTY_NOTICES.md); `markdown-pdf` (AGPL)
-  stays in the `docs` dependency group.
+  stays in the `docs` dependency group and `huggingface-hub` in the `hub` group.
+- The Hugging Face token comes from `hf auth login` or `HF_TOKEN`, never from `.env`, code or logs;
+  `publish` re-runs are idempotent (repos updated in place, collection found by title).
 - TDD: write or extend a test in the same PR as the code; run the full pipeline like a user and read
   `runs/<run>/log.txt` before calling anything done.
 - Git: feature branch per phase, meaningful commits, PR merged with `gh pr merge --merge`; never
