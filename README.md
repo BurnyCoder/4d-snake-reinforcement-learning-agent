@@ -47,7 +47,7 @@ git clone https://github.com/BurnyCoder/4d-snake-reinforcement-learning-agent.gi
 cd 4d-snake-reinforcement-learning-agent
 uv sync --all-groups          # creates .venv with torch 2.14 (CUDA 13.0 wheels), SB3 2.9, gymnasium 1.3, ...
 cp .env.example .env          # optional: edit any SNAKE_* key (all keys are documented there)
-uv run pytest -m "not slow and not gpu"   # fast suite, about 20 s; run -m gpu for the CUDA smoke test
+uv run pytest -m "not slow and not gpu"   # fast suite, about 25 s; run -m gpu for the CUDA smoke test
 ```
 
 Every setting is a `SNAKE_<FIELD>` key of [src/snake4d/config.py](src/snake4d/config.py):
@@ -66,12 +66,32 @@ uv run snake4d evaluate --set policy=route       # scripted baseline on the defa
 uv run snake4d train --env-file experiments/exp02_ppo_2x4.env
 uv run snake4d imitate --env-file experiments/exp05_bc_4x4.env   # behaviour-clone the route follower -> bc_model.zip
 uv run snake4d train --set model_path=exp05_bc_4x4   # PPO fine-tune from the clone (the imitate run's name, or a path to its bc_model.zip)
-uv run snake4d evaluate --set model_path=runs/<run>/best_model.zip --set size=2 --set ndim=4
+uv run snake4d evaluate --set model_path=runs/<run>/best_model.zip --set size=2 --set ndim=4   # a run name works too; evaluate needs the checkpoint's board (watch infers it)
 uv run snake4d report                            # figures + reports/all_experiments.md
 uv run --group docs snake4d report --pdf         # ... plus reports/paper.pdf
 uv run --group hub snake4d publish               # checkpoints + model cards -> Hub repos and a collection (after `hf auth login`)
 uv run snake4d pipeline --env-file experiments/exp04_ppo_4x4.env   # train -> evaluate -> report
 uv run tensorboard --logdir runs                 # optional live curves
+```
+
+### Reproduce the experiments
+
+Run names matter: `report` labels its rows by `SNAKE_RUN_NAME`,
+[reports/networks.md](reports/networks.md) links `reports/data/<run>/`, and `publish` looks for the
+evaluation of `<exp>` under `<exp>_best` (training runs) or `<exp>_eval` (the imitate run). Wall
+times per run are the `wall_min` column of [reports/all_experiments.md](reports/all_experiments.md);
+the archived `reports/data/<run>/config.json` files hold every resolved setting.
+
+```bash
+uv run snake4d bench --set batch_size=2048 --set run_name=exp00_benchmark                            # exp00 -> docs/benchmark.md
+uv run snake4d evaluate --set size=<2|3|4> --set ndim=4 --set policy=<route|random> --set run_name=exp01_<policy>_<size>x4   # exp01: six baseline runs
+uv run snake4d train --env-file experiments/<exp>.env                                                 # exp02, exp02b, exp02c, exp02d, exp03a, exp03b, exp03c, exp04
+uv run snake4d evaluate --env-file experiments/<exp>.env --set model_path=<exp> --set run_name=<exp>_best   # each arm's best checkpoint, 100 episodes x 3 seeds
+uv run snake4d imitate --env-file experiments/exp05_bc_4x4.env                                        # exp05: clone the route follower
+uv run snake4d evaluate --env-file experiments/exp05_bc_4x4.env --set model_path=exp05_bc_4x4 --set run_name=exp05_bc_4x4_eval
+uv run snake4d train --env-file experiments/exp05b_ppo_4x4_from_bc.env --set model_path=exp05_bc_4x4  # exp05b: PPO fine-tune of the clone
+uv run snake4d evaluate --env-file experiments/exp05b_ppo_4x4_from_bc.env --set model_path=exp05b_ppo_4x4_from_bc --set run_name=exp05b_ppo_4x4_from_bc_best
+uv run snake4d report                                                                                 # then: uv run --group docs snake4d report --pdf; uv run --group hub snake4d publish
 ```
 
 ## Play and watch
@@ -80,10 +100,11 @@ uv run tensorboard --logdir runs                 # optional live curves
 tiles (tile rows labelled `z0..`, tile columns `w0..`), the head yellow, the food red, the body
 green shading from dark at the tail to bright at the neck. A move along `x` or `y` stays inside a
 tile; a move along `z` or `w` jumps to the neighbouring tile. `watch` plays game after game (Space
-pauses, N plays one move, `+`/`-` double or halve the speed, R restarts) and infers the board size
-from the checkpoint. `SNAKE_MODEL_PATH` takes a run name (the newest `train`/`imitate` run of that
-name under `runs/`) or a `.zip`; `SNAKE_DETERMINISTIC=0` samples moves instead of taking the
-argmax; `SNAKE_WATCH_GIF=1` records the first game as `runs/<ts>_watch_<name>/game.gif`.
+pauses, N plays one move, `+`/`-` double or halve the speed, R restarts, Esc quits) and infers the
+board size from the checkpoint. `SNAKE_MODEL_PATH` takes a run name (the newest `train`/`imitate`
+run of that name under `runs/`) or a `.zip`; `SNAKE_DETERMINISTIC=0` samples moves instead of
+taking the argmax; `SNAKE_WATCH_GIF=1` records the first game as
+`runs/<ts>_watch_<run_name>/game.gif` (`SNAKE_RUN_NAME`, default `run`).
 
 Which network to watch: [reports/networks.md](reports/networks.md) compares all ten. The
 strict-curriculum 2^4 agent exp02d is the best genuinely learned one, completing 96.3 % of its
@@ -106,26 +127,39 @@ uv run snake4d watch --set model_path=weights/best_model.zip
 1. `snake4d.main` builds one `Config` and calls the phase's `run(cfg)`; the phase creates
    `runs/<timestamp>_<phase>_<name>/` with `config.json`, `versions.json` (library versions, GPU,
    git commit) and `run.log` (every log line, timestamped, also printed to the terminal).
-2. `train`: `vec_env.make_env` builds `N` boards in one `SnakeBatch` behind an SB3 `VecEnv` +
+2. `bench`: `benchmark.ppo_fps` trains MaskablePPO for `bench_steps` timesteps on every row of the
+   grid (the batched env with 256 / 1024 / 4096 boards, `DummyVecEnv(16)`, `SubprocVecEnv(16)`),
+   on cpu and, when available, cuda, with 1 thread and torch's default thread count, then sweeps
+   the minibatch size on the best row; `benchmark.json` is written and `docs/benchmark.md` is
+   regenerated from it.
+3. `play`: one `SnakeEnv` in the pygame window; every key press is one `env.step`, and each
+   finished game (won, dead or starved, with its steps and fill) is logged to `run.log`.
+4. `train`: `vec_env.make_env` builds `N` boards in one `SnakeBatch` behind an SB3 `VecEnv` +
    `VecMonitor`. Each PPO step asks the env for action masks, samples one move per board, steps
    all boards with numpy, auto-resets finished ones (curriculum starts are laid along the route),
    and records episode fill/success. SB3 writes `progress.csv`, `log.txt` and TensorBoard events;
    `MaskableEvalCallback` evaluates 100 true-start episodes every `eval_every` steps into
    `eval/evaluations.npz` and keeps `best_model.zip`; checkpoints and `final_model.zip` are saved.
-3. `evaluate`: the same batched env with one episode per board runs the model or a scripted
+5. `imitate`: `imitation.collect` steps `n_envs` boards for `n_steps` moves under the route
+   follower with starts spread over every snake length, `behaviour_clone` fits the policy head to
+   those expert moves (negative log-likelihood under the action mask, Adam, `bc_epochs` passes) and
+   `bc_model.zip` is saved; `train --set model_path=<that run's name>` fine-tunes it with PPO.
+6. `evaluate`: the same batched env with one episode per board runs the model or a scripted
    policy through sb3-contrib's masked `evaluate_policy` for every seed; `summary.json` and
    `eval_episodes.csv` are written.
-4. `watch`: loads the checkpoint (or a scripted policy), infers the board from its input and
+7. `watch`: loads the checkpoint (or a scripted policy), infers the board from its input and
    output sizes, and plays it in the `play` window, one masked `predict` per move; every game's
    outcome goes to `run.log` and, when asked, the first game to `game.gif`.
-5. `report`: reads every experiment run directory, draws `reports/figures/<run>_curves.png` and
+8. `report`: reads every experiment run directory, draws `reports/figures/<run>_curves.png` and
    `<run>_fill_hist.png`, copies the small artifacts to `reports/data/<run>/`, writes the table in
    `reports/all_experiments.md`, and with `--pdf` compiles `reports/paper.pdf`.
-6. `publish`: for every run name in `SNAKE_PUBLISH_RUNS`, copies the evaluated checkpoint,
+9. `publish`: for every run name in `SNAKE_PUBLISH_RUNS`, copies the evaluated checkpoint,
    `config.json`, `versions.json`, the evaluation files and, for training runs, the SB3 log and the
    figures into `runs/<ts>_publish_*/staging/<repo>/`, writes a model card, uploads the folder to the
    Hub repo `<namespace>/4d-snake-<run>`, adds it to the collection and records everything in
    `published.json`.
+10. `pipeline`: `train`, then `evaluate` on that run's `best_model.zip` (`final_model.zip` when no
+    in-training evaluation happened), then `report`.
 
 ## Architecture
 
@@ -182,6 +216,11 @@ flowchart LR
     callbacks --> train
     agents --> evaluation
     hamilton --> agents
+    grid --> hamilton
+    grid --> agents
+    render --> env
+    evaluation --> train
+    publish -.->|run-name lookup| evaluation
     train --> runs
     evaluation --> runs
     bench --> runs
@@ -221,6 +260,7 @@ minibatch 16384), see [exp00](reports/experiments/exp00_benchmark.md) and
 ## Repository layout
 
 `src/snake4d/` package (see the graph above), `tests/` (pytest; markers `slow`, `gpu`),
-`experiments/` (pre-registered `.env` arms), `docs/`, `reports/`, `runs/` (git-ignored run
-artifacts). Working conventions for contributors and agents: [AGENTS.md](AGENTS.md). Licence: MIT;
-credits in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+`experiments/` (pre-registered `.env` arms), `docs/`, `reports/`, `.env.example` (every key with
+its default), `runs/` and `weights/` (git-ignored: run artifacts, Hub downloads). Working
+conventions for contributors and agents: [AGENTS.md](AGENTS.md), which `CLAUDE.md` imports for
+Claude Code. Licence: MIT; credits in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

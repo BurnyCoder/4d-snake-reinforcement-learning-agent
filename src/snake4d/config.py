@@ -97,7 +97,7 @@ class Config:
     # --- watching (phase `watch`: a checkpoint or scripted policy plays in the window) ---------
     watch_speed: int = 8         # moves per second; the +/- keys double / halve it while watching
     deterministic: int = 1       # 1 = argmax move (the mode of the reported scores), 0 = sample
-    watch_gif: int = 0           # 1 = record the first game to runs/<ts>_watch_<name>/game.gif
+    watch_gif: int = 0           # 1 = record the first game to runs/<ts>_watch_<run_name>/game.gif
     # --- paths / phase arguments ------------------------------------------------------------
     runs_dir: str = "runs"
     run_name: str = "run"
