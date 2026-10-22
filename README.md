@@ -1,12 +1,12 @@
 # 4D Snake + reinforcement learning
 
-![exp02d playing one 2^4 game](reports/figures/exp02d_ppo_2x4_backplay_strict_game.gif)
-
 An N-dimensional snake game (default **4D**: a `4 x 4 x 4 x 4` board, 256 cells, 8 move
 directions) and a **MaskablePPO** agent trained to *complete* it, i.e. grow until the snake fills
 every cell. Everything runs on one Windows laptop (RTX 5070 Laptop GPU); the game is playable by a
 human, the training pipeline is fully scripted, and every experiment is written up in
 [reports/](reports/).
+
+![exp02d playing one 2^4 game](reports/figures/exp02d_ppo_2x4_backplay_strict_game.gif)
 
 ## Methodology in one page
 
