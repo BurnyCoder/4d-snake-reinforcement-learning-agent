@@ -1,5 +1,7 @@
 # 4D Snake + reinforcement learning
 
+![exp02d playing one 2^4 game](reports/figures/exp02d_ppo_2x4_backplay_strict_game.gif)
+
 An N-dimensional snake game (default **4D**: a `4 x 4 x 4 x 4` board, 256 cells, 8 move
 directions) and a **MaskablePPO** agent trained to *complete* it, i.e. grow until the snake fills
 every cell. Everything runs on one Windows laptop (RTX 5070 Laptop GPU); the game is playable by a
@@ -17,21 +19,26 @@ human, the training pipeline is fully scripted, and every experiment is written 
   death penalty. Rules: [docs/game_rules.md](docs/game_rules.md).
 - **Agent.** sb3-contrib `MaskablePPO` with an MLP `[512, 512]` on a flat observation of
   `4 * cells + 2` floats (body, time-to-vacate, head, food, length, hunger). The environment
-  supplies a legal-action mask (walls, occupied cells, the neck), so the agent only chooses
-  *which* safe move fills the board. Reward: +1 food, -1 death, +10 win, -0.001 per step; no
-  distance shaping. Design and hyper-parameters: [docs/rl_design.md](docs/rl_design.md).
+  supplies a legal-action mask (walls, occupied cells, the neck), with an in-bounds fallback
+  when the snake is trapped; masking does not guarantee eventual completion. Reward: +1 food,
+  -1 death, +10 win, -0.001 per step; no distance shaping. Design and hyper-parameters:
+  [docs/rl_design.md](docs/rl_design.md).
 - **Curriculum.** A Hamiltonian route (a cycle for even sizes; for odd sizes a cycle over all
-  cells but one corner) is both the scripted baseline that proves every board is completable and
+  cells but one corner) supplies a scripted baseline and
   the demonstration for a **Backplay** reverse curriculum: episodes start as long route segments
-  near a full board and the start moves backwards as the success rate allows. Evaluation always
-  starts from length 1.
+  near a full board and the start moves backwards as the recorded success rate allows. The
+  historical gate mixes episodes begun at different frontiers, so it does not establish stage
+  mastery; see the [scientific audit](reports/scientific_audit.md). Evaluation starts from length 1.
 - **Evaluation.** 100 episodes x 3 seeds through masked `evaluate_policy` (trained models:
   deterministic and stochastic passes; scripted baselines: one deterministic pass); headline
   metrics are the completion rate, mean fill and steps to complete,
-  compared with the route follower (ceiling) and masked random play (floor):
+  compared with the route follower and masked random play. All ten networks have one training
+  seed; the three evaluation seeds measure variation for fixed checkpoints, not training
+  replication:
   [docs/evaluation.md](docs/evaluation.md).
-- **Science loop.** Each experiment is pre-registered as an `.env` override file in
-  [experiments/](experiments/) and written up (question, hypothesis, setup, results, learnings)
+- **Experiment records.** `.env` override files in [experiments/](experiments/) describe the
+  experiment settings; their commit history does not establish preregistration or exact executed
+  source for every run. Experiments are written up (question, hypothesis, setup, results, learnings)
   in [reports/experiments/](reports/experiments/); [reports/all_experiments.md](reports/all_experiments.md)
   is the generated cross-run table and [reports/paper.md](reports/paper.md) the paper (compiled to
   `reports/paper.pdf` by `uv run --group docs snake4d report --pdf`).
@@ -57,8 +64,8 @@ defaults < `.env` < `--env-file experiments/<exp>.env` < `--set field=value`.
 
 ```bash
 uv run snake4d play                              # human play on the 4^4 board (--set size=2 for the small one): WASD = x/y, IJKL = z/w, R restart, Esc quit
-uv run snake4d watch --set model_path=exp02d_ppo_2x4_backplay_strict   # watch the best learned network play 2^4 (a run name under runs/, or a .zip path)
-uv run snake4d watch --set model_path=exp04_ppo_4x4                    # the 4^4 network trained from scratch: an efficient forager that never finishes
+uv run snake4d watch --set model_path=exp02d_ppo_2x4_backplay_strict   # watch the highest-completion 2^4 checkpoint in the archived comparison (a run name under runs/, or a .zip path)
+uv run snake4d watch --set model_path=exp04_ppo_4x4                    # the 4^4 network trained from scratch: no completions in its archived evaluation
 uv run snake4d watch --set model_path=exp05b_ppo_4x4_from_bc --set watch_speed=64   # the 4^4 finisher (the PPO-fine-tuned clone of the loop follower; 16k-move games)
 uv run snake4d watch --set policy=route                                # the scripted Hamiltonian loop itself
 uv run snake4d bench                             # throughput grid -> docs/benchmark.md
@@ -80,7 +87,9 @@ Run names matter: `report` labels its rows by `SNAKE_RUN_NAME`,
 [reports/networks.md](reports/networks.md) links `reports/data/<run>/`, and `publish` looks for the
 evaluation of `<exp>` under `<exp>_best` (training runs) or `<exp>_eval` (the imitate run). Wall
 times per run are the `wall_min` column of [reports/all_experiments.md](reports/all_experiments.md);
-the archived `reports/data/<run>/config.json` files hold every resolved setting.
+the archived `reports/data/<run>/config.json` files hold every resolved setting. These commands
+describe the current workflow; historical source records are incomplete, so exact reproduction of
+the archived runs is not established. See [provenance limitations](reports/scientific_audit.md).
 
 ```bash
 uv run snake4d bench --set batch_size=2048 --set run_name=exp00_benchmark                            # exp00 -> docs/benchmark.md
@@ -106,13 +115,13 @@ run of that name under `runs/`) or a `.zip`; `SNAKE_DETERMINISTIC=0` samples mov
 taking the argmax; `SNAKE_WATCH_GIF=1` records the first game as
 `runs/<ts>_watch_<run_name>/game.gif` (`SNAKE_RUN_NAME`, default `run`).
 
-Which network to watch: [reports/networks.md](reports/networks.md) compares all ten. The
-strict-curriculum 2^4 agent exp02d is the best genuinely learned one, completing 96.3 % of its
-games in 43.5 moves against the loop follower's 65.9; the two 4^4 networks that always finish are
-a behaviour-cloned copy of that loop and its PPO fine-tune, which changed almost nothing, and the
-4^4 network trained from scratch walks efficiently but never finishes (fill 0.40).
-
-![exp02d playing one 2^4 game](reports/figures/exp02d_ppo_2x4_backplay_strict_game.gif)
+Which network to watch: [reports/networks.md](reports/networks.md) compares all ten. In the
+archived deterministic evaluation, strict-curriculum 2^4 agent exp02d had the highest completion
+among the from-scratch checkpoints, completing 96.3 % of its
+games in 43.5 moves against the loop follower's 65.9. The two 4^4 networks with no observed
+deterministic failures are a behaviour clone of that loop and its PPO fine-tune; the fine-tune did
+not establish an efficiency improvement. The 4^4 network trained from scratch had no observed
+completion (fill 0.40).
 
 Without training anything, the weights come from the Hub
 (https://huggingface.co/docs/huggingface_hub/guides/cli#hf-download):
@@ -141,9 +150,10 @@ uv run snake4d watch --set model_path=weights/best_model.zip
    `MaskableEvalCallback` evaluates 100 true-start episodes every `eval_every` steps into
    `eval/evaluations.npz` and keeps `best_model.zip`; checkpoints and `final_model.zip` are saved.
 5. `imitate`: `imitation.collect` steps `n_envs` boards for `n_steps` moves under the route
-   follower with starts spread over every snake length, `behaviour_clone` fits the policy head to
+   follower with starts spread over every snake length, `behaviour_clone` fits the policy to
    those expert moves (negative log-likelihood under the action mask, Adam, `bc_epochs` passes) and
-   `bc_model.zip` is saved; `train --set model_path=<that run's name>` fine-tunes it with PPO.
+   `bc_model.zip` is saved. Logged accuracy is measured on training minibatches, not a held-out
+   dataset; `train --set model_path=<that run's name>` fine-tunes the policy with PPO.
 6. `evaluate`: the same batched env with one episode per board runs the model or a scripted
    policy through sb3-contrib's masked `evaluate_policy` for every seed; `summary.json` and
    `eval_episodes.csv` are written.
@@ -241,26 +251,31 @@ The weights, configs and evaluation files of those ten networks are on the Huggi
 repo per run (`BurnyCoder/4d-snake-<run>`, uploaded by `snake4d publish`), in the collection
 [4D Snake RL: all evaluated networks](https://huggingface.co/collections/BurnyCoder/4d-snake-rl-all-evaluated-networks-6a9d0a0a66c7efcd101b7741).
 
-| board | route follower ([exp01](reports/data/exp01_route_4x4/summary.json)) | random legal play ([exp01](reports/data/exp01_random_4x4/summary.json)) | best learned agent | write-up, data |
+The table reports observed outcomes for selected fixed checkpoints, each from one training seed.
+Steps to completion are conditional on successful episodes. Algorithm-level superiority, training
+robustness and causal explanations remain unresolved; the [scientific audit](reports/scientific_audit.md)
+records the methodological defects and the [evaluation protocol](docs/evaluation.md) explains uncertainty.
+
+| board | route follower ([exp01](reports/data/exp01_route_4x4/summary.json)) | random legal play ([exp01](reports/data/exp01_random_4x4/summary.json)) | selected learned checkpoint | write-up, data |
 |---|---|---|---|---|
 | 2^4 (16 cells) | 100 %, 66 steps | 29 % | **96.3 %** completion, 43.5 steps (MaskablePPO + strict-gate Backplay, 5M steps) | [exp02](reports/experiments/exp02_ppo_2x4.md), [data](reports/data/exp02d_ppo_2x4_backplay_strict_best/summary.json) |
 | 3^4 (81 cells, odd) | 100 %, 1,875 steps | 0 % (fill 0.23) | 0 % completion, fill 0.54-0.57 (30M steps, with or without curriculum) | [exp03](reports/experiments/exp03_ppo_3x4.md), [data](reports/data/exp03a_ppo_3x4_nocur_best/summary.json) |
-| 4^4 (256 cells) | 100 %, 16,448 steps | 0 % (fill 0.08) | PPO + curriculum from scratch: 0 %, fill 0.40 (100M steps). **Behaviour-cloned network: 100 % completion** (deterministic, 3 x 100 episodes), 16,448 steps; PPO fine-tuning kept 100 % but left the policy unchanged (near-deterministic clone, approx_kl below 2e-5) | [exp04](reports/experiments/exp04_ppo_4x4.md), [exp05](reports/experiments/exp05_bc_4x4.md), [data](reports/data/exp05_bc_4x4_eval/summary.json) |
+| 4^4 (256 cells) | 100 %, 16,448 steps | 0 % (fill 0.08) | PPO + curriculum from scratch: 0 %, fill 0.40 (100M steps). **Behaviour-cloned network: 100 % completion** (deterministic, 3 x 100 episodes), 16,448 steps; PPO fine-tuning also scored 100 % but did not establish an efficiency improvement | [exp04](reports/experiments/exp04_ppo_4x4.md), [exp05](reports/experiments/exp05_bc_4x4.md), [data](reports/data/exp05_bc_4x4_eval/summary.json) |
 
-Model-free PPO with a reverse curriculum completes the smallest 4D board but not the 81- or
-256-cell boards ([exp04](reports/experiments/exp04_ppo_4x4.md) analyses why: schedules tied to
-the step budget instead of curriculum progress, no transfer from cycle-shaped starts). Cloning
-the same network on the scripted Hamiltonian follower's decisions (`snake4d imitate`, about twelve
-seconds)
-yields a neural policy that completes the full 4^4 board every time; PPO then only has to make it
-faster. Throughput on this laptop: 33k PPO steps/s (4096 batched envs on CUDA,
+The evaluated from-scratch PPO checkpoints completed the smallest 4D board but recorded no
+completions on the larger boards. Schedule decay and transfer from curriculum starts are
+unisolated hypotheses; the contaminated curriculum gates are an additional confound. The
+behaviour-cloned checkpoint completed every archived deterministic 4^4 evaluation episode, but
+had failures when sampling actions. Its PPO fine-tune had very limited complete-trajectory
+coverage and does not establish whether further PPO training can improve efficiency.
+Throughput on this laptop: 33k PPO steps/s (4096 batched envs on CUDA,
 minibatch 16384), see [exp00](reports/experiments/exp00_benchmark.md) and
 [benchmark.json](reports/data/exp00_benchmark/benchmark.json).
 
 ## Repository layout
 
 `src/snake4d/` package (see the graph above), `tests/` (pytest; markers `slow`, `gpu`),
-`experiments/` (pre-registered `.env` arms), `docs/`, `reports/`, `.env.example` (every key with
+`experiments/` (`.env` experiment configurations), `docs/`, `reports/`, `.env.example` (every key with
 its default), `runs/` and `weights/` (git-ignored: run artifacts, Hub downloads). Working
 conventions for contributors and agents: [AGENTS.md](AGENTS.md), which `CLAUDE.md` imports for
 Claude Code. Licence: MIT; credits in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

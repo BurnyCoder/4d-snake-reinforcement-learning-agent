@@ -47,30 +47,29 @@ https://arxiv.org/abs/2407.17032; openai/baselines#608, https://github.com/opena
 | env only, batched 256 / 1024 / 4096 | 234,823 / 136,074 / 126,304 steps/s | no policy |
 
 Minibatch sweep on the best row: batch 2048 -> 8192 -> 16384 gives 18,735 -> 30,686 ->
-32,967 fps (best measured throughput 32,967 fps). Run-to-run variance is about
-8 %: the batch-2048 setting measured 20,433 fps in the grid and
-18,735 in the sweep.
+32,967 fps (best measured throughput 32,967 fps). The batch-2048 setting measured
+20,433 fps in the grid and 18,735 in the sweep, a difference of about 8 % of the first
+measurement. Two measurements do not estimate a reliable run-to-run variance.
 
 ## Analysis and learnings
 
-- The hypothesis holds with a wide margin: the batched env trains 10x faster than the better
-  of the two SB3 vectorisers, and `SubprocVecEnv` is no better than `DummyVecEnv` here (spawned
-  workers on Windows spend their time on pickling and pipes, not on the microsecond-scale env step).
+- The measured ordering is consistent with the hypothesis: the batched env trains 10x faster
+  than the better of the two SB3 vectorisers in this grid. IPC overhead is a plausible explanation
+  for `SubprocVecEnv`, but no profiler or matched vector-count ablation isolates its contribution.
 - The environment is not the bottleneck: it steps at 126k-235k steps/s
   (4.3-7.9 microseconds per env-step) but PPO reaches
-  20k at batch 2048. The minibatch sweep shows the update dominates: 4 epochs x
+  20k at batch 2048. This suggests substantial policy/update overhead: 4 epochs x
   128 minibatches = 512 gradient steps per 262,144-sample rollout at batch 2048, each with
-  fixed Python overhead; batch 8192 (128 gradient steps) gives 31k fps and 16384
+  possible fixed overhead; batch 8192 (128 gradient steps) gives 31k fps and 16384
   (64 gradient steps) 33k fps with diminishing returns, so 8192 was adopted.
-- Env-only throughput falls as the batch grows (235k at 256 envs to 126k at 4096)
-  because the observation tensor (n_envs x 1026 float32, 16 MB at 4096) is rebuilt every step; the
-  cost is memory bandwidth, not the game rules.
+- Env-only throughput falls as the batch grows (235k at 256 envs to 126k at 4096).
+  Rebuilding the observation tensor (n_envs x 1026 float32, 16 MB at 4096) is a candidate cost;
+  this benchmark does not isolate memory bandwidth from game rules or other work.
 - CPU with one torch thread is slow (1.6k fps) because the 1026 -> 512 -> 512 forward pass and
   the update run single-threaded; 8 threads help 3.7x, the GPU another
   3.4x. Training on CPU is a fallback only.
-- Larger env batches beat smaller ones on cuda (15k -> 20k from 256 to 4096 envs):
-  the per-step fixed costs (get_action_masks list, VecMonitor loop, buffer add) are amortised over
-  more envs.
+- Larger env batches have higher measured throughput on cuda (15k -> 20k from 256 to 4096 envs).
+  Amortising per-step costs is a plausible explanation, not a measured attribution.
 
 ## Decisions
 

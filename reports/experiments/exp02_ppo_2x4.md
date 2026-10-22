@@ -21,6 +21,11 @@ reverse curriculum change the outcome?
 
 ## Hypotheses
 
+These are the questions recorded in this retrospective report; independent preregistration is
+not established. Each arm has one training seed (0), and the three evaluation seeds measure
+variation for its selected checkpoint. See the [scientific audit](../scientific_audit.md) and
+[evaluation uncertainty](../../docs/evaluation.md) for the limits on inference.
+
 - H1: plain PPO reaches 100 % completion within a few hundred thousand steps (the board is tiny).
 - H2: the curriculum is unnecessary on 16 cells (exp02b ~ exp02).
 
@@ -40,29 +45,31 @@ Figures: `reports/figures/exp02*_curves.png` (fill, eval success, frontier, epis
 
 ## Analysis and learnings
 
-- H1 is **rejected**. Plain PPO climbs quickly (eval success 0.41 after 0.3M steps, 0.8 after
+- H1 was **not met by these runs**. Plain PPO climbs quickly (eval success 0.41 after 0.3M steps, 0.8 after
   1.3M) but plateaus around 0.85-0.93; 4x more steps only lifts the best checkpoint from 0.88 to
   0.93. Rollout fill is 0.98, so the agent almost always reaches 15/16 cells.
 - Failure mode: of 61 failed evaluation episodes of the 20M model, 35 end at fill 15/16 by a
   collision (median length 33 for those 35, 31 over all 61 failures; far below the 64-step
   starvation cap; `eval_episodes.csv`), i.e. the snake boxes itself in
   with one cell left. Completing the last cell requires the body to be a Hamiltonian path whose
-  head can still reach the free cell - a global constraint the one-hot MLP policy only partly learns
-  from sparse terminal rewards.
-- H2 is rejected in an instructive way. With the loose gate (`rho=0.2`) the frontier ran from 15
-  to 1 in about 15 seconds of training - the curriculum advanced as soon as one fifth of the
-  endgame episodes succeeded, so it taught nothing (exp02b = exp02 within noise). With a strict
-  gate (`rho=0.9`, narrow window, 500 episodes per decision) the agent had to master each endgame
-  frontier before moving back; the frontier still reached 1 within a minute, but the resulting
-  policy is the best of all arms (0.963 deterministic, 0.960 stochastic, an in-training evaluation
-  of 1.00 at 3.6M steps) at the same 5M budget. The strict gate is now the default
+  head can still reach the free cell. The failure records identify this outcome, but do not
+  establish which representation or reward property caused it.
+- H2 is unresolved at the algorithm level. With the loose gate (`rho=0.2`) the frontier ran from
+  15 to 1 in about 15 seconds of training. The strict configuration produced the highest observed
+  completion among these checkpoints (0.963 deterministic, 0.960 stochastic, an in-training
+  evaluation of 1.00 at 3.6M steps) at the same 5M budget. This is not a threshold-only ablation:
+  threshold, window and minimum episode count all changed, and neither arm was replicated across
+  training seeds. The callback also pooled completions from earlier frontiers, so neither rapid
+  advancement nor clearing a gate establishes current-stage mastery
+  ([audit evidence](../scientific_audit.md)). The strict configuration became the default
   (`SNAKE_CURRICULUM_RHO=0.9`, `WINDOW=4`, `MIN_EPS=500`).
-- Deterministic (argmax) evaluation beats sampling for every arm except exp02d, where both agree:
-  the strict-curriculum policy is confident in the endgame; the others rely on argmax to avoid
-  their own exploration noise.
+- The observed deterministic completion rate exceeds the sampling rate in every arm, with a
+  smaller difference in exp02d. These are descriptive checkpoint comparisons; they do not
+  establish an endgame-confidence mechanism or statistical equivalence.
 - Steps to complete (34.4-43.5) are a third to a half below the route follower's 65.9: the
   learned agents cut
-  across the board instead of circling it, which is the efficiency gain RL buys.
+  across the board instead of following the full cycle. These means condition on successful
+  episodes, while the route follower completed every sampled episode; failure costs matter too.
 - The eval curve is noisy at 100 episodes (about +-3 percentage points, the binomial standard
   error at p = 0.9 and n = 100 - an estimate, not a measurement), which is why the reported
   numbers use the best checkpoint re-evaluated with 300 episodes; the in-training "1.00" of
@@ -71,6 +78,6 @@ Figures: `reports/figures/exp02*_curves.png` (fill, eval success, frontier, epis
 ## Decisions
 
 - Curriculum defaults switched to the strict gate for exp03b (3^4) and exp04 (4^4).
-- Open question carried forward: closing the last few percent on tiny boards likely needs either
+- Open hypotheses carried forward: closing the last few percent on tiny boards might involve
   longer training with the strict gate, a lower final entropy, or an endgame-aware feature
   (reachability of the free region); tested next on the harder boards first.

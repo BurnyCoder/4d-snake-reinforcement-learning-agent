@@ -48,6 +48,10 @@ auto-resetting finished rows with `terminal_observation` and `TimeLimit.truncate
 | `publish` | `publish.py` | the train/imitate run and the evaluation run of every name in `SNAKE_PUBLISH_RUNS`, `reports/figures/` | one Hub model repo per run (checkpoint, `config.json`, `versions.json`, `eval/`, `README.md` model card, plus `train/progress.csv` and `figures/` for training runs), the Hub collection, `runs/<ts>_publish_*/published.json` |
 | `pipeline` | `main.py` | Config | train -> evaluate -> report |
 
+The PDF includes the scientific audit as its final appendix. Its wide aggregate table is rendered
+as per-run metric tables without changing the Markdown table or recorded scores. A report-only
+regression verifies source text survives PDF pagination, alongside visual review of the output.
+
 `main.py` builds one `Config` (defaults -> `.env` -> `--env-file` -> `--set`) and calls the phase's
 `run(cfg)`; every run directory also holds `config.json` (the resolved Config) and `versions.json`
 (`logging_utils.make_run_dir`), whatever the phase. Phases import each other's modules lazily so
@@ -57,6 +61,9 @@ auto-resetting finished rows with `terminal_observation` and `TimeLimit.truncate
 file is used as is, otherwise the name selects the newest `<ts>_train_<name>` or
 `<ts>_imitate_<name>` directory under `runs_dir` and its evaluated checkpoint, `best_model.zip`,
 else `bc_model.zip`, else `final_model.zip` (`publish.find_run` / `publish.model_file`).
+Here "best" means greatest mean evaluation return, not greatest completion rate; see
+[evaluation.md](evaluation.md#during-training). `versions.json` records HEAD and installed
+versions, not an immutable snapshot of the executed working tree.
 
 ## Data flow of a training step
 
@@ -78,3 +85,23 @@ else `bc_model.zip`, else `final_model.zip` (`publish.find_run` / `publish.model
 sizes, a cycle over every cell except the corner for odd sizes (see docs/game_rules.md), the
 Gray-code path for 1D. `SnakeBatch.reset` lays curriculum snakes along a random rotation of this
 route; `agents.RoutePolicy` follows it as the scripted baseline.
+
+`Backplay` currently counts terminal episodes with `start_len > 1`, including episodes reset under
+older frontiers. A future correction must carry a reset-time frontier generation through physics,
+adapters and monitor records, then filter the gate by the active generation. Merely clearing the
+callback buffer does not exclude in-flight episodes. This correction is not implemented here;
+the [audit](../reports/scientific_audit.md) records its effect on the historical methodology.
+
+## Future-run provenance requirements
+
+These are requirements for future scientific runs; the current logger does not implement them.
+Before training, save an immutable source manifest with the recorded commit, dirty tracked-file
+diff, and relevant untracked source/configuration files, excluding credentials and generated
+artifacts. Hash the manifest and resolved configuration with SHA-256. Save a SHA-256 for every
+checkpoint and record the exact checkpoint hash and evaluation configuration in its evaluation
+artifacts. A run name or path to a newest checkpoint is not an immutable identity.
+
+Archive hypotheses, primary metrics, selection rules, seed/sample-size rationale and analysis
+plans with a timestamp before the run to support prospective claims. Existing manifests cannot
+retroactively establish this or recover missing working-tree contents. See the
+[scientific audit](../reports/scientific_audit.md) for the historical provenance gaps.

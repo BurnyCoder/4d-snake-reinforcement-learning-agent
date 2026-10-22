@@ -7,9 +7,9 @@ Date: 2026-09-04. Command: `uv run snake4d evaluate --set size=<2|3|4> --set ndi
 
 Can a scripted policy fill the 2^4, 3^4 and 4^4 boards from a random length-1 start under the
 episode caps used for training (starvation after more than `4 * cells` consecutive idle steps, `cells^2` total), and how
-many steps does it need? What does masked random play achieve? These two numbers bracket every
-learned agent: the route follower is the completability proof and the efficiency ceiling to beat;
-random legal play is the floor.
+many steps does it need? What does masked random play achieve? These policies supply a scripted
+completion reference and an uninformed-action reference. Their empirical scores are not universal
+upper or lower performance bounds.
 
 ## Hypotheses
 
@@ -18,13 +18,16 @@ random legal play is the floor.
   average).
 - H2: the odd board 3^4 (81 cells, colour classes 41/40, no Hamiltonian cycle) is also completable
   by a scripted policy, but a plain Hamiltonian *path* follower is not enough.
-- H3: masked random play completes the 16-cell board sometimes and never the larger ones.
+- H3: masked random play completes some sampled 16-cell episodes and no sampled larger-board episodes.
 
 ## Setup
 
 100 episodes x 3 seeds per policy and board, a single `deterministic=True` pass (the random
 baseline still samples its actions), the evaluation protocol of
 docs/evaluation.md (masked `evaluate_policy`, one batched env per episode, explicit seeds).
+These are finite samples; see [evaluation uncertainty](../../docs/evaluation.md) for the
+interpretation of zero observed failures or successes. The hypotheses are reported
+retrospectively; independent preregistration is not established ([audit](../scientific_audit.md)).
 
 ## Results
 
@@ -39,11 +42,12 @@ docs/evaluation.md (masked `evaluate_policy`, one batched env per episode, expli
 
 ## Analysis and learnings
 
-- H1 confirmed: the cycle follower never fails on even boards. The step cost is close to
+- H1's completion prediction held in every sampled even-board episode; its cost estimate was
+  too high. The observed step cost is close to
   `C^2 / 4` (16,448 for C = 256), half the `C^2 / 2` worst case, because the food is on average half
   a lap ahead of the head. This is the efficiency bar: a learned agent should complete 4^4 in far
   fewer than ~16k steps.
-- H2 confirmed only after a fix. The first version of the route follower used the reflected
+- H2's sampled completion prediction held after a fix. The first version of the route follower used the reflected
   Gray-code *path* on odd boards and reached only about 4 % fill on 3^4 (run not archived; that
   follower was removed in PR #6, commit f3b68d7) - worse than random play at 23 %: an open path has a dead end, so the head reaches the end, has to leave the route, and then
   keeps colliding with its own body near the end. The fix (`hamilton.cycle_minus_corner`) builds a
@@ -51,11 +55,13 @@ docs/evaluation.md (masked `evaluate_policy`, one batched env per episode, expli
   "ladder" splice of the corner's column into a neighbouring column for each extra dimension -
   and the policy enters the corner only when the food is there and at most as many cycle cells
   would be skipped as are currently free (otherwise the head could overtake its tail). With that,
-  3^4 is completed in 100 % of episodes with zero fallbacks, in 1,874.5 steps on average. The stale
-  Gray-path run was removed from `runs/`; this paragraph is its record.
-- H3 confirmed: masked random play finishes the 16-cell board in 29 % of episodes (masking alone
-  prevents most deaths on a tiny board) but never the 81- or 256-cell boards, where it fills
-  23 % and 8 % before dying or starving.
+  3^4 is completed in 100 % of sampled episodes with zero recorded fallbacks, in 1,874.5 steps
+  on average. The stale Gray-path run was removed from `runs/`; its numerical and mechanistic
+  account above cannot be independently checked from archived artifacts.
+- H3's sample prediction held: masked random play finishes the 16-cell board in 29 % of
+  episodes, with no observed 81- or 256-cell completions; it fills 23 % and 8 % before dying
+  or starving. This does not establish zero population completion probability or isolate the
+  benefit of masking, because there is no unmasked control.
 - The starvation cap (`4 * cells`) is never binding for the route follower: the longest wait for
   food is one lap (`C` steps) plus the detour on odd boards.
 
