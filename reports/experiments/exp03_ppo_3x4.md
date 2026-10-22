@@ -19,6 +19,10 @@ reverse curriculum that worked on 2^4 carry over?
 
 ## Hypotheses
 
+These hypotheses are reported retrospectively, without established preregistration. Each arm
+uses training seed 0; three evaluation seeds do not replicate training. Interpretation and
+provenance limits are recorded in the [scientific audit](../scientific_audit.md).
+
 - H1: without a curriculum, fill plateaus well below 1 with no completions (parity dead-ends).
 - H2: the strict-gate Backplay curriculum reaches the true start and yields completions.
 
@@ -27,7 +31,7 @@ reverse curriculum that worked on 2^4 carry over?
 | arm | success | fill (eval) | true-start fill during training (mean / best episode) | curriculum-start success |
 |---|---|---|---|---|
 | exp03a plain | 0.000 | 0.566 | 0.5395 / 0.914 (74/81) | - |
-| exp03b strict gate | 0.000 | 0.549 | 0.5289 / 0.877 (71/81) | 0.78 mean; cleared the 0.9 gate twice (0.90 -> 79 at 14.9M, 0.91 -> 78 at 15.1M), peak 0.907 |
+| exp03b strict gate | 0.000 | 0.549 | 0.5289 / 0.877 (71/81) | 0.78 mean; logged gate triggered twice (0.90 -> 79 at 14.9M, 0.91 -> 78 at 15.1M), peak 0.907 |
 | exp03c relaxed gate | 0.000 | 0.542 | 0.5280 / 0.877 (71/81) | 0.60 |
 | route follower (exp01) | 1.000 | 1.000 | - | - |
 
@@ -35,24 +39,29 @@ Figures: `reports/figures/exp03*_curves.png`, `exp03*_fill_hist.png`.
 
 ## Analysis and learnings
 
-- H1 confirmed: every arm fills 54-57 % of the board on average and at most 74/81 cells
+- The observed outcome is consistent with H1: every arm fills 54-57 % of the board on average and at most 74/81 cells
   (exp03a, 161,535 true-start episodes) or 71/81 (exp03b/c, ~80k each; `episodes.json`); no
   completion. Episodes end by collision at fill ~0.5-0.6, long
-  before the starvation cap.
-- H2 rejected: the curriculum never left the endgame. Starting as a 71-79-cell cycle segment
+  before the starvation cap. This does not isolate parity as the cause or establish a zero
+  population completion probability ([uncertainty](../../docs/evaluation.md)).
+- H2 was not met in these runs: the curriculum never left the endgame. Starting as a 71-79-cell cycle segment
   (the frontier is clamped to `route_len - 1 = 79`; the callback logged 80 before the read-back
   fix; window 4 for exp03b, 8 for exp03c),
-  the agent succeeded in 60-85 % of episodes on average and cleared the 90 % gate only twice
+  the logged curriculum success was 60-85 % and triggered the 90 % gate only twice
   (frontier 80 -> 78, then a plateau around 0.83); relaxing the gate to 80 % with larger steps
   moved the frontier only to 76 and lowered the curriculum success to 60 %.
-  Completing from a near-full odd board needs the corner detour (enter the corner only when the
-  food is there and the skipped arc is free) - a two-step plan the policy did not learn reliably in
-  30M steps.
-- The plain and curriculum arms end with the same true-start fill (0.53-0.55): the curriculum
-  episodes (80 % of the batch) did not transfer to the true start at all, so the 20 % true-start
-  episodes drove the same learning as in exp03a with a fifth of the data.
-- The odd board is therefore not just "harder": it changes the endgame from "follow the free arc"
-  to "follow the free arc and time a detour", and PPO with this observation does not get there.
+  Gate samples mixed episode starts from different frontiers; these crossings therefore do not
+  demonstrate mastery of the stated frontier. The scripted route needs a timed corner detour,
+  but no policy intervention here identifies failure to learn that detour as the cause.
+- The observed true-start training fill is similar across the arms (0.53-0.55), but this does
+  not establish an absence of transfer. The configured 20 % is a probability per reset, not a
+  fraction of transitions: true-start episodes account for **53.93 %** of completed-episode
+  transitions in exp03b and **52.15 %** in exp03c, because their durations differ. These shares
+  exclude unfinished episodes and are reconstructed from raw monitors in the
+  [audit evidence](../scientific_audit.md).
+- Odd parity changes the route construction, but board size, training exposure and curriculum
+  implementation also differ from the small-board runs. These observations do not isolate a
+  causal effect of parity or establish algorithm-level failure.
 
 ## Decisions
 

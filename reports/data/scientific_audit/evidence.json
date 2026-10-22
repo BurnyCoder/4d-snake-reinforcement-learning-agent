@@ -1,0 +1,52 @@
+{
+  "audit_date": "2026-10-22",
+  "base_commit": "cd30fd7",
+  "method": "Read-only reanalysis of saved artifacts; no models or rollouts. Monitor excerpts are copied records, not new observations.",
+  "monitors": {
+    "exp03b_ppo_3x4_backplay": {
+      "path": "runs/20260904-205247_train_exp03b_ppo_3x4_backplay/monitor.monitor.csv",
+      "sha256": "18894de375c3d1355bbede024381ec7a4b7e8b6b4ed2e57218d29ef2b2e5be5f",
+      "t_start": 1788547967.9542696,
+      "completed_episodes": 405949,
+      "completed_transitions": 29880185,
+      "true_start_transitions": 16112937
+    },
+    "exp03c_ppo_3x4_backplay_relaxed": {
+      "path": "runs/20260904-215712_train_exp03c_ppo_3x4_backplay_relaxed/monitor.monitor.csv",
+      "sha256": "ef7cff775e1c5a6da3a6bd0bbd20e92a8d160418b9b72b9d17cd68069be218cb",
+      "t_start": 1788551832.7006466,
+      "completed_episodes": 385536,
+      "completed_transitions": 29883203,
+      "true_start_transitions": 15582883
+    },
+    "exp04_ppo_4x4": {
+      "path": "runs/20260904-210249_train_exp04_ppo_4x4/monitor.monitor.csv",
+      "sha256": "4649071bd0c3a02fe2c3ad1321585dc1afda82154e9864d50d4bdd7f5f00882c",
+      "t_start": 1788548569.7419333,
+      "completed_episodes": 401151,
+      "completed_transitions": 99301360,
+      "true_start_transitions": 51186306
+    }
+  },
+  "gates": [
+    {
+      "frontier": 239,
+      "next_frontier": 231,
+      "timesteps": 22544384,
+      "time_lower_exclusive": 659.5610666275024,
+      "time_upper_inclusive": 667.9220666885376,
+      "episodes": 892,
+      "wins": 740
+    },
+    {
+      "frontier": 215,
+      "next_frontier": 207,
+      "timesteps": 46923776,
+      "time_lower_exclusive": 1385.8360667228699,
+      "time_upper_inclusive": 1402.3470666408539,
+      "episodes": 963,
+      "wins": 799
+    }
+  ],
+  "gate_excerpt_sha256": "79fab183fda4c92e596321e53dbd59073c04fea07c51198c4ad5eadae990162b"
+}

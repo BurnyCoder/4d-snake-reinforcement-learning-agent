@@ -1,6 +1,9 @@
 """Tests for snake4d.report on synthetic run artifacts (progress.csv, evaluations.npz, monitor)."""
 
 import json
+import unicodedata
+from html.parser import HTMLParser
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -73,6 +76,8 @@ def test_report_phase_writes_table_figures_and_data(tmp_path):
     table = run(cfg, reports_dir=reports)
     text = table.read_text(encoding="utf-8")
     assert "exp02_ppo_2x4" in text and "exp01_route_2x4" in text and "| run " in text
+    assert "not training replications or confidence intervals" in text
+    assert "[scientific audit](scientific_audit.md)" in text
     assert "publish" not in text and "watch" not in text
     assert not (reports / "data" / "run").exists()
     assert "[exp02_ppo_2x4](experiments/exp02_ppo_2x4.md)" in text
@@ -96,10 +101,45 @@ def test_to_pdf_builds_a_document_in_order(tmp_path):
     (reports / "all_experiments.md").write_text("# All\n\n| a |\n|---|\n| TABLEMARK |\n",
                                                 encoding="utf-8")
     (reports / "networks.md").write_text("# Networks\n\nNETWORKSMARK\n", encoding="utf-8")
+    (reports / "scientific_audit.md").write_text("# Audit\n\nAUDITMARK\n", encoding="utf-8")
     (reports / "experiments" / "exp02_ppo_2x4.md").write_text("# Exp02\n\nEXPMARK\n",
                                                                encoding="utf-8")
     pdf = to_pdf(reports, tmp_path / "paper.pdf")
     assert pdf.stat().st_size > 1000
     text = "".join(page.get_text() for page in pymupdf.open(str(pdf)))
-    marks = [text.index(m) for m in ("PAPERMARK", "TABLEMARK", "NETWORKSMARK", "EXPMARK")]
-    assert marks == sorted(marks)  # paper, cross-run table, networks comparison, then write-ups
+    marks = [text.index(m) for m in ("PAPERMARK", "TABLEMARK", "NETWORKSMARK", "EXPMARK",
+                                   "AUDITMARK")]
+    assert marks == sorted(marks)  # the audit must accompany the corrected paper as an appendix
+
+
+@pytest.mark.slow
+def test_pdf_preserves_full_report_evidence(tmp_path):
+    """Regress clipped wide columns and lost prose after a table crossed a page boundary."""
+    pytest.importorskip("markdown_pdf")
+    pymupdf = pytest.importorskip("pymupdf")
+    from markdown_it import MarkdownIt
+
+    reports = Path(__file__).resolve().parents[1] / "reports"
+    output = to_pdf(reports, tmp_path / "paper.pdf")
+    with pymupdf.open(output) as document:
+        text = "".join(page.get_text() for page in document)
+        assert document.metadata["author"] == "Libor Burian"
+    compact = "".join(unicodedata.normalize("NFKC", text).split())
+    assert "steps_to_complete_det" in compact and "fill_true_start_final" in compact
+    clone_section = compact.split("Experiment05-Imitationwarmstart", 1)[1].split(
+        "Independentscienti", 1)[0]
+    assert all(token in clone_section for token in ("64/300", "71/300", "4,928"))
+    # Check source text nodes as well as headline markers: table pagination can silently drop
+    # other sections. HTMLParser removes formatting while NFKC normalizes PDF font ligatures.
+    sources = [reports / name for name in ("paper.md", "all_experiments.md", "networks.md",
+                                          "scientific_audit.md")]
+    sources += sorted((reports / "experiments").glob("exp*.md"))
+    markdown = MarkdownIt().enable("table")
+    for source in sources:
+        nodes = []
+        parser = HTMLParser()
+        parser.handle_data = nodes.append
+        parser.feed(markdown.render(source.read_text(encoding="utf-8")))
+        expected = ["".join(unicodedata.normalize("NFKC", node).split()) for node in nodes]
+        missing = [node for node in expected if len(node) > 12 and node not in compact]
+        assert not missing, (source.name, missing)

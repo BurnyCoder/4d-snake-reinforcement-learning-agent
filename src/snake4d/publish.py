@@ -116,7 +116,7 @@ def describe(phase: str, run_cfg: dict) -> str:
 def _row(label: str, mode: dict) -> str:
     """One results-table row from a ``summary.json`` mode block."""
     steps = mode["steps_to_complete_mean"]
-    steps_text = "never" if steps is None else f"{steps:,.1f}"
+    steps_text = "no observed wins" if steps is None else f"{steps:,.1f}"
     return (f"| {label} | {mode['success_rate_mean']:.3f} +- {mode['success_rate_std']:.3f} | "
             f"{mode['fill_mean']:.3f} | {steps_text} | {mode['win_within']['4C']:.3f} |")
 
@@ -124,7 +124,7 @@ def _row(label: str, mode: dict) -> str:
 def _metadata(repo: str, board_tag: str, det: dict, tags: list[str],
               base_model: str | None) -> list[str]:
     """The YAML front matter: licence, library, tags and the ``model-index`` evaluation results."""
-    metrics = [("completion_rate", "completion rate (deterministic, 100 episodes x 3 seeds)",
+    metrics = [("completion_rate", "completion rate (deterministic; std across evaluation seeds)",
                 f"{det['success_rate_mean']:.3f} +/- {det['success_rate_std']:.3f}"),
                ("mean_reward", "mean episode return (deterministic)", f"{det['return_mean']:.2f}"),
                ("fill", "mean final fill (deterministic)", f"{det['fill_mean']:.3f}")]
@@ -157,24 +157,34 @@ def model_card(name: str, phase: str, run_cfg: dict, summary: dict, versions: di
             "stable-baselines3", "sb3-contrib", "maskable-ppo"]
     tags += ["behavior-cloning", "imitation-learning"] if phase == "imitate" else []
     tags += ["backplay-curriculum"] if phase == "train" and run_cfg.get("curriculum") else []
+    episodes = det["episodes"]  # Report the saved evaluation count, not an assumed sample size.
     if det["success_rate_mean"] == 1.0:
-        outcome = "completes the board in every deterministic evaluation episode"
+        outcome = (f"completed the board in all {episodes} observed deterministic evaluation "
+                   "episodes")
     else:
-        outcome = (f"completes the board in {100 * det['success_rate_mean']:.1f} % of "
-                   "deterministic episodes")
+        outcome = (f"completed the board in {100 * det['success_rate_mean']:.1f} % of "
+                   f"{episodes} observed deterministic evaluation episodes")
     docs = f"{GITHUB}/blob/main/docs"
+    audit = f"{GITHUB}/blob/main/reports/scientific_audit.md"
     body = [f"# {repo}", "",
             f"An MLP policy with two hidden layers of {run_cfg['net_width']} units for "
             f"**{ndim}-dimensional snake on the {size}^{ndim} board** ({cells} cells, "
             f"{2 * ndim} moves): "
             f"{describe(phase, run_cfg)}. From a length-1 start it {outcome}, evaluated with the "
-            f"protocol of [docs/evaluation.md]({docs}/evaluation.md) (100 episodes x 3 seeds, "
+            f"protocol of [docs/evaluation.md]({docs}/evaluation.md) "
+            f"({len(summary['seeds'])} evaluation seeds, "
             "masked `evaluate_policy`).", ""]
     if det["success_rate_mean"] == 0.0:
-        body += ["**Negative result.** This network never fills the board from the true start "
-                 f"(mean final fill {det['fill_mean']:.3f}). It is published so the failure is "
-                 "reproducible; the write-up linked below analyses why.", ""]
+        body += ["**Negative result.** No successful true-start episodes were observed "
+                 f"(mean final fill {det['fill_mean']:.3f}). This does not establish that "
+                 "completion is impossible; the write-up discusses possible explanations.", ""]
     body += ["## Results (`eval/summary.json`)", "",
+             "The `+-` term is the population standard deviation across evaluation seeds for "
+             "this fixed checkpoint; it is not a confidence interval or training-run variation. "
+             f"This run has one training seed (recorded training seed `{run_cfg['seed']}`). "
+             "These exploratory observations do not establish algorithm-level superiority or "
+             f"robustness. See the [scientific audit]({audit}) for conditional binomial intervals "
+             "and limitations.", "",
              "| mode | completion +- std | mean fill | steps to complete | won within 4C |",
              "|---|---|---|---|---|", _row("deterministic (argmax)", det)]
     body += [_row("sampling", stoch)] if stoch else []
@@ -199,18 +209,29 @@ def model_card(name: str, phase: str, run_cfg: dict, summary: dict, versions: di
              "action, _ = model.predict(obs, action_masks=masks, deterministic=True)",
              "```", ""]
     if phase == "imitate" or base_model:
-        body += ["Use deterministic mode: the cloned policy follows a fixed Hamiltonian cycle and "
-                 "sampled off-cycle moves eventually trap the snake (see the results table"
+        body += ["Use deterministic mode to reproduce the argmax protocol; sampling is a separate "
+                 "evaluation condition (see the results table"
                  + (f"; analysis: {write_up_url}" if write_up_url else "") + ").", ""]
     training = f"- Phase `{phase}`; experiment file `experiments/{name}.env`"
     training += f"; write-up: {write_up_url}." if write_up_url else "."
-    body += ["## Training", "", training, "- Resolved configuration (`config.json`):", "",
+    body += ["## Training", "", training]
+    if zip_name == "best_model.zip":
+        body += ["- This checkpoint was selected by mean evaluation return, not completion rate "
+                 "(the MaskableEvalCallback selection rule)."]
+    if run_cfg.get("curriculum") and phase == "train":
+        body += ["- The historical curriculum gate includes episodes from older frontiers; "
+                 f"stage mastery is not established ([audit]({audit}))."]
+    if phase == "imitate":
+        body += ["- Logged BC accuracy is training-minibatch accuracy, not held-out accuracy."]
+    body += ["- Resolved configuration (`config.json`):", "",
              "```json", json.dumps(run_cfg, indent=2), "```", ""]
     for figure in figure_names:
         body += [f"![{figure}](figures/{figure})", ""]
     libraries = ", ".join(f"{k} {v}" for k, v in versions.items() if k != "git_commit")
     body += ["## Provenance", "",
-             f"- Code: {GITHUB} at commit `{versions.get('git_commit', 'unknown')}`.",
+             f"- Repository: {GITHUB}; recorded HEAD `{versions.get('git_commit', 'unknown')}`. "
+             "This records a revision, not the exact executed source: historical manifests omit "
+             f"dirty changes, relevant untracked files and checkpoint hashes ([audit]({audit})).",
              f"- Library versions (`versions.json`): {libraries}.",
              "- `eval/summary.json` and `eval/eval_episodes.csv` are the files the repository's "
              "reports quote; every evaluated network is compared in "
@@ -235,7 +256,8 @@ def collection_note(run_cfg: dict, summary: dict, phase: str) -> str:
     steps = det["steps_to_complete_mean"]
     steps_text = "" if steps is None else f", {steps:,.1f} steps"
     note = (f"{run_cfg['size']}^{run_cfg['ndim']} board: completion {det['success_rate_mean']:.3f}"
-            f" +- {det['success_rate_std']:.3f} (argmax), fill {det['fill_mean']:.3f}{steps_text}; "
+            f" +- {det['success_rate_std']:.3f} (argmax; std across evaluation seeds), "
+            f"fill {det['fill_mean']:.3f}{steps_text}; "
             f"{describe(phase, run_cfg)}.")
     return note[:NOTE_LIMIT]
 

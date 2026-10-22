@@ -79,8 +79,12 @@ needs equal colour classes, hence an even number of cells:
   is Hamiltonian when one side is even (Skiena 1990, p. 148, via https://mathworld.wolfram.com/GridGraph.html),
   and the even cell count is necessary because grid graphs are bipartite (Itai, Papadimitriou
   and Szwarcfiter 1982, https://doi.org/10.1137/0211056); `hamilton.ham_cycle` builds the 2D
-  cycle and lifts it dimension by dimension - our own construction, which `check_route` verifies. Following it fills the board
-  every time (`RoutePolicy`), which is the completability proof and the step-count ceiling.
+  cycle and lifts it dimension by dimension - our own construction, which `check_route` verifies.
+  From length 1, cycle following reaches each food within `C - 1 < 4C` moves and fills the board
+  within at most `(C - 1)^2 < C^2` moves. The inter-food gap and total duration therefore respect
+  the starvation and episode caps, respectively. This gives a constructive completability
+  argument; its measured mean duration is a reference, not an upper bound on other policies'
+  completion times.
 - `3^4 = 81` splits 41/40: no Hamiltonian cycle exists, and a snake filling the board must end with
   its body as a Hamiltonian path whose ends both lie in the 41-cell class. The scripted baseline
   uses a Hamiltonian cycle over the 80 cells other than the corner `(0,0,0,0)`

@@ -194,6 +194,9 @@ def write_all_experiments(rows: list[dict], reports_dir: Path) -> Path:
         "its own file:", "",
         *[f"- [{p.stem}](experiments/{p.name})" for p in experiments], "",
         "## Metrics by run", "",
+        "Scores describe the archived checkpoints. The +- values are variation across evaluation "
+        "seeds, not training replications or confidence intervals. See the "
+        "[scientific audit](scientific_audit.md) for interpretation and provenance limits.", "",
         table[columns].to_markdown(index=False) if columns else "(no runs found)", "",
         "Figures: `reports/figures/<run>_curves.png` and `<run>_fill_hist.png` per training run.",
         "",
@@ -203,18 +206,47 @@ def write_all_experiments(rows: list[dict], reports_dir: Path) -> Path:
     return path
 
 
+def _pdf_run_details(text: str) -> str:
+    """Turn the generated wide metrics table into readable per-run tables for the PDF only."""
+    lines = text.splitlines()
+    start = next((i for i, line in enumerate(lines) if line.startswith("| run ")), None)
+    if start is None:
+        return text
+    end = start
+    while end < len(lines) and lines[end].startswith("|"):
+        end += 1
+    # This table is emitted by write_all_experiments: no escaped pipes or multiline cells.
+    rows = [[cell.strip() for cell in line.strip("|").split("|")]
+            for line in lines[start:end]]
+    details = []
+    for row in rows[2:]:  # Skip the header and Markdown alignment row; retain every nonempty value.
+        details += [f"### {row[0]}", "", "| metric | value |", "|---|---|"]
+        details += [f"| {key} | {value} |" for key, value in zip(rows[0][1:], row[1:], strict=True)
+                    if value]
+        details.append("")
+    return "\n".join(lines[:start] + details + lines[end:])
+
+
 def to_pdf(reports_dir: Path, pdf_path: Path) -> Path:
-    """paper.md + all_experiments.md + networks.md + the experiment write-ups, as one PDF."""
+    """Compile the paper, tables, write-ups and audit appendix without model execution."""
     from markdown_pdf import MarkdownPdf, Section  # AGPL tool: docs group, never a runtime import
 
     parts = [reports_dir / name for name in ("paper.md", "all_experiments.md", "networks.md")]
     parts += sorted((reports_dir / "experiments").glob("exp*.md"))  # the hand-written write-ups
+    parts.append(reports_dir / "scientific_audit.md")  # evidence limits travel with the PDF
     pdf = MarkdownPdf(toc_level=2, optimize=True)
     for part in parts:
         if part.exists():
             text = part.read_text(encoding="utf-8").replace("](../../", "](").replace("](../", "](")
-            pdf.add_section(Section(text, root=str(reports_dir)))
+            if part.name == "all_experiments.md":
+                text = _pdf_run_details(text)
+            # Compact tables avoid lost rows at page breaks; do not add vertical padding without
+            # the full-content PDF regression. CSS API: https://github.com/vb64/markdown-pdf.
+            pdf.add_section(Section(text, root=str(reports_dir)), user_css=(
+                "body {font-size: 10pt;} table {font-size: 9pt; border-collapse: collapse;} "
+                "th, td {padding: 0 4px; vertical-align: top;}"))
     pdf.meta["title"] = "4D Snake with MaskablePPO"
+    pdf.meta["author"] = "Libor Burian"
     pdf.save(str(pdf_path))
     return pdf_path
 
