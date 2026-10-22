@@ -3,8 +3,9 @@
 Global context: every phase (bench, train, evaluate, report) creates one run directory
 ``runs/<YYYYmmdd-HHMMSS>_<phase>_<run_name>/`` holding ``run.log`` (everything logged, with
 timestamps; SB3's own ``log.txt``/``progress.csv`` live next to it), ``config.json`` (resolved
-Config) and ``versions.json`` (library versions, GPU, git commit) so any number in a report can be
-traced back to exact code and settings.
+Config) and ``versions.json`` (library versions, GPU, git commit) to trace reported settings.
+The recorded HEAD does not capture uncommitted source; exact-source provenance requirements
+for future runs are documented in ``docs/architecture.md``.
 
 Local notes: ``logging.basicConfig(force=True, handlers=[...])`` per
 https://docs.python.org/3/library/logging.html#logging.basicConfig - ``force`` removes handlers that

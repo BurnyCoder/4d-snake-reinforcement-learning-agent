@@ -17,10 +17,6 @@ from pathlib import Path
 
 import pytest
 
-from snake4d.config import Config
-from snake4d.train import build_model
-from snake4d.vec_env import make_env
-
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "reports" / "data"
 
@@ -167,7 +163,7 @@ CASES = {
     "readme cpu vs gpu": ("README.md", lambda: f"about {grid_fps('batched', 4096, 'cuda', 8) / grid_fps('batched', 4096, 'cpu', 8):.1f}x"),
     "readme 3^4 fill range": ("README.md", lambda: "fill {:.2f}-{:.2f}".format(min(det(r, 'fill_mean') for r in ON_3X4), max(det(r, 'fill_mean') for r in ON_3X4))),
     "readme watch exp02d": ("README.md", lambda: f"completing {100 * det('exp02d_ppo_2x4_backplay_strict_best'):.1f} % of its\ngames in {det('exp02d_ppo_2x4_backplay_strict_best', 'steps_to_complete_mean'):.1f} moves against the loop follower's {det('exp01_route_2x4', 'steps_to_complete_mean'):.1f}"),
-    "readme watch exp04": ("README.md", lambda: f"never finishes (fill {det('exp04_ppo_4x4_best', 'fill_mean'):.2f})"),
+    "readme watch exp04": ("README.md", lambda: f"completion (fill {det('exp04_ppo_4x4_best', 'fill_mean'):.2f})"),
     "paper exp02 plain": ("reports/paper.md", lambda: f"plain PPO {det('exp02_ppo_2x4_best'):.3f} (5M) and {det('exp02c_ppo_2x4_long_best'):.3f} (20M)"),
     "paper exp02 loose": ("reports/paper.md", lambda: f"Backplay (rho 0.2) {det('exp02b_ppo_2x4_backplay_best'):.3f}"),
     "paper exp02 strict": ("reports/paper.md", lambda: f"(rho 0.9, window 4) {det('exp02d_ppo_2x4_backplay_strict_best'):.3f} at 5M"),
@@ -269,6 +265,11 @@ def test_geometric_floor_is_the_mean_manhattan_distance(n):
 
 
 def test_mlp_params_matches_the_built_policy():
+    # Keep artifact-only selections free of model imports; this test still builds a policy.
+    from snake4d.config import Config
+    from snake4d.train import build_model
+    from snake4d.vec_env import make_env
+
     cfg = Config(size=2, device="cpu")
     policy = build_model(cfg, make_env(cfg, 2, 0)).policy
     assert sum(p.numel() for p in policy.parameters()) == mlp_params(cfg.n_cells)
