@@ -53,7 +53,7 @@ def collect(cfg: Config, n_envs: int, steps: int, seed: int):
 
 def behaviour_clone(model, obs: np.ndarray, actions: np.ndarray, masks: np.ndarray,
                     epochs: int, batch_size: int, lr: float) -> float:
-    """Supervised training of the policy head on the expert data; returns the final accuracy."""
+    """Fit the policy head; return final-epoch online training-minibatch accuracy."""
     policy, device = model.policy, model.device
     obs_t = torch.as_tensor(obs, device=device)
     act_t = torch.as_tensor(actions, device=device)
@@ -77,7 +77,7 @@ def behaviour_clone(model, obs: np.ndarray, actions: np.ndarray, masks: np.ndarr
                 dist = policy.get_distribution(obs_t[idx], action_masks=mask_t[idx])
                 correct += int((dist.get_actions(deterministic=True) == act_t[idx]).sum())
         accuracy = correct / n
-        log.info("bc epoch %d/%d: loss %.4f accuracy %.4f", epoch + 1, epochs,
+        log.info("bc epoch %d/%d: loss %.4f training accuracy %.4f", epoch + 1, epochs,
                  float(np.mean(losses)), accuracy)
     return accuracy
 
@@ -91,7 +91,7 @@ def run(cfg: Config) -> Path:
     model = build_model(cfg, make_env(cfg, cfg.n_envs, cfg.seed))
     accuracy = behaviour_clone(model, obs, actions, masks, cfg.bc_epochs, cfg.batch_size, cfg.bc_lr)
     model.save(run_dir / "bc_model.zip")
-    logger.info("saved %s (expert-action accuracy %.3f); fine-tune with "
+    logger.info("saved %s (training-minibatch expert-action accuracy %.3f); fine-tune with "
                 "`snake4d train --set model_path=%s`", run_dir / "bc_model.zip", accuracy,
                 run_dir / "bc_model.zip")
     return run_dir

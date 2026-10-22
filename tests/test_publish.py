@@ -110,7 +110,7 @@ def test_model_card_metadata_body_and_negative_result():
     negative = publish.model_card("exp04_ppo_4x4", "train", cfg, failed, versions,
                                   "tester/4d-snake-exp04-ppo-4x4", "best_model.zip")
     assert "Negative result" in negative and "steps_to_complete" not in negative
-    assert "| never |" in negative and "| sampling |" not in negative
+    assert "| no observed wins |" in negative and "| sampling |" not in negative
     clone = publish.model_card("exp05b_ppo_4x4_from_bc", "train", cfg, _summary(), versions,
                                EXP05B, "best_model.zip", base_model=EXP05,
                                write_up_url="https://example.org/exp05")
@@ -118,6 +118,30 @@ def test_model_card_metadata_body_and_negative_result():
     assert "analysis: https://example.org/exp05" in clone
     assert "the learning curves and the fill histogram" in clone
     assert "An MLP policy with two hidden layers of 512 units" in clone
+
+
+def test_model_card_limits_claims_to_saved_checkpoint_and_records():
+    """Cards retain archived scores while disclosing the audit's inference and source limits."""
+    cfg = Config(size=4, ndim=4).__dict__
+    versions = {"git_commit": "abc123"}
+    failed = _summary(success=0.0, std=0.0, steps=None)
+    card = publish.model_card("exp04_ppo_4x4", "train", cfg, failed, versions,
+                              "tester/4d-snake-exp04-ppo-4x4", "best_model.zip")
+    assert "300 observed deterministic evaluation episodes" in card
+    assert "standard deviation across evaluation seeds" in card
+    assert "one training seed" in card and "training seed `0`" in card
+    assert "not a confidence interval" in card
+    assert "mean evaluation return" in card
+    assert "recorded HEAD" in card and "exact executed source" in card
+    assert "reports/scientific_audit.md" in card
+    assert "older frontiers" in card
+    assert "never fills" not in card and "so the failure is reproducible" not in card
+    clone = publish.model_card("exp05_bc_4x4", "imitate", cfg,
+                               _summary(success=1.0, std=0.0), versions, EXP05, "bc_model.zip")
+    assert "all 300 observed deterministic evaluation episodes" in clone
+    assert "training-minibatch accuracy" in clone and "not held-out accuracy" in clone
+    assert "sampled off-cycle moves eventually trap" not in clone
+    assert "across evaluation seeds" in publish.collection_note(cfg, failed, "train")
 
 
 def test_publish_phase_stages_uploads_and_collects(tmp_path):

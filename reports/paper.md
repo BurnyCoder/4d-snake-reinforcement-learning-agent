@@ -1,7 +1,12 @@
 # Completing 4D Snake with Masked PPO and a Hamiltonian Reverse Curriculum
 
+Author: Libor Burian
+
 Repository: https://github.com/BurnyCoder/4d-snake-reinforcement-learning-agent - all numbers below come from the run
 artifacts copied to `reports/data/` and the per-experiment write-ups in `reports/experiments/`.
+This is an exploratory report of fixed checkpoints, each trained with seed 0. The
+[scientific audit](scientific_audit.md) records the artifact checks, methodological defects and
+source-provenance limits; no new training or policy evaluation was run for these corrections.
 
 ## Abstract
 
@@ -12,19 +17,25 @@ laptop GPU). We train sb3-contrib MaskablePPO agents to *complete* the game - fi
 with a legal-action mask from the environment, a sparse reward (+1 food, -1 death, +10 win, -0.001
 per step) and a Backplay-style reverse curriculum whose demonstration is a Hamiltonian route
 (a cycle for even sizes; for odd sizes a cycle over all cells but one corner with a guarded
-detour). Scripted route following completes 2^4, 3^4 and 4^4 in 100 % of episodes and defines
-the step-count ceiling (66 / 1,875 / 16,448 steps). On 2^4 plain PPO plateaus at 0.88-0.93
-completion; a strictly gated curriculum (advance only at 90 % success) reaches 0.963 at the same
-5M-step budget while completing in 43.5 steps, a third fewer than the route follower's 65.9. On the
-larger boards the result is negative within our budgets: on 3^4 (odd parity) every arm plateaus at
-54-57 % fill with no completions, and on 4^4 a 100M-step curriculum run moves the start frontier
-from 255 to 199 cells and then collapses, reaching 40 % fill from the true start (best episode
-66 %) and zero completions. We attribute the collapse to schedules tied to the total budget rather
-than to curriculum progress, and to the lack of transfer from cycle-shaped starts to true starts.
+detour). Scripted route following completed all evaluated 2^4, 3^4 and 4^4 episodes, providing
+a step-count reference (66 / 1,875 / 16,448 steps). On 2^4 the plain PPO checkpoints scored 0.88-0.93
+completion; the nominally strict curriculum checkpoint scored 0.963 at the
+5M-step budget while completing in 43.5 steps, a third fewer than the route follower's 65.9 on
+successful episodes. The curriculum gate mixes episodes begun at different frontiers, so its
+advances do not establish mastery of each stage. The strict arm also changed multiple curriculum
+parameters, and there are no independent training replications. On the larger boards the
+evaluated checkpoints recorded no completions within our budgets: on 3^4 (odd parity) all arms
+scored 54-57 % fill, and on 4^4 a 100M-step curriculum run moved the start frontier
+from 255 to 199 cells before its curriculum success collapsed; its selected checkpoint reached
+40 % fill from the true start (best episode
+66 %) and zero completions. Schedule decay and transfer from curriculum starts are hypotheses,
+not isolated causes of collapse; gate contamination is an additional confound.
 Behaviour-cloning the same network on 262k route-follower decisions spread over all fill levels
 (about twelve seconds of supervised training) yields a neural policy that completes the full 4^4 board in
-100 % of deterministic evaluation episodes (3 seeds x 100), at the follower's 16,448 steps; PPO
-fine-tuning of this clone is the route to a faster learned completer.
+100 % of deterministic evaluation episodes (3 evaluation seeds x 100), at the follower's 16,448 steps.
+The recorded PPO fine-tune did not establish an efficiency improvement and completed only one
+training episode, a failure. These findings describe the evaluated checkpoints, not algorithm-level
+superiority or guaranteed completion.
 
 ## 1. Introduction
 
@@ -41,7 +52,8 @@ batched training, evaluation protocol and reports.
   gradient in the observation, and decaying learning rate and clip range; we adopt the masking,
   the body-age channel and the schedules, but not its distance-based progress bonus.
 - **Invalid-action masking.** Huang and Ontanon (2020) justify masking theoretically and show its
-  value grows with the number of invalid actions - eight moves in 4D make it essential.
+  value in settings with many invalid actions. We use masking but did not ablate it, so its
+  necessity in this game is not established.
 - **Reverse curricula.** Backplay (Resnick et al. 2018) starts near the end of a demonstration and
   moves the start backwards; Salimans and Chen (2018) gate the move on the success rate. Our
   demonstration is a Hamiltonian route rather than a human trajectory.
@@ -59,8 +71,12 @@ batched training, evaluation protocol and reports.
 - **AlphaSnake** (Du et al. 2022) is, by its authors' account, the first published learned agent
   with a >50 % win rate on a 10x10 board, using MCTS; it uses the Hamiltonian-cycle strategy as
   its scripted baseline, as we do.
-- **Shaping.** Ng, Harada and Russell (1999): potential-based shaping is the only shaping that
-  cannot change the optimal policy; we keep it available but off.
+- **Shaping.** Ng, Harada and Russell (1999) give policy-invariance conditions for potential-based
+  reward shaping; episodic boundary conditions also matter (Grzes 2017). Shaping is available
+  but off in the recorded experiments.
+- **Empirical design.** Patterson et al. (2024) distinguish experimental units and sources of
+  variability in RL comparisons. Our multiple evaluation seeds quantify fixed-checkpoint
+  variation; they do not replace independent training seeds.
 
 ## 3. The game
 
@@ -90,21 +106,31 @@ Defaults were chosen by the throughput benchmark (exp00) and the reference agent
 `DummyVecEnv`/`SubprocVecEnv` over single environments and showed the PPO update, not the
 environment, to be the bottleneck (minibatch 2048 -> 8192 lifts throughput 19k -> 31k fps on the best row; `reports/data/exp00_benchmark/benchmark.json`).
 
-**Curriculum.** 80 % of resets place the snake as a segment of length `U[hi - 4, hi]` along a
-random rotation of the Hamiltonian route, starting at `hi = C - 1`; the frontier moves back by
-`max(1, C/64)` cells whenever at least 500 curriculum episodes reached 90 % success; 20 % of resets
-always start from length 1 and evaluation always starts from length 1.
+**Curriculum.** With the current defaults, 80 % of resets place the snake as a segment of length
+`U[hi - 4, hi]` along a random rotation of the Hamiltonian route, starting at `hi = C - 1`; the frontier moves back by
+`max(1, C/64)` cells when at least 500 accumulated curriculum episodes exceed 90 % success; 20 % of resets
+start from length 1 and evaluation always starts from length 1. Per-run configurations override
+these defaults. The historical callback admits episodes begun before a frontier change into the
+next gate's statistic. Its logged success rate is therefore a mixture of stages, not a valid
+current-stage mastery measure. Reset proportions also differ from transition proportions because
+episode durations differ; see the [audit](scientific_audit.md) for reconstructed examples.
 
 **Baselines.** The route follower (Hamiltonian cycle, or cycle-minus-corner with a detour that
 skips at most as many cycle cells as are free) and uniformly random legal play.
 
 **Evaluation.** 100 episodes x 3 seeds, deterministic and stochastic, masked `evaluate_policy`;
-metrics: completion rate, mean fill, steps to complete, win-within-K.
+metrics: completion rate, mean fill, steps to complete conditional on winning, win-within-K.
+Each learned checkpoint has one training seed (0); `+-` values below are standard deviations
+across evaluation-seed means, not confidence intervals or training-seed variability. Checkpoints
+were selected using in-training evaluation. The [evaluation protocol](../docs/evaluation.md)
+states the uncertainty interpretation and selection limitations.
 
 ## 5. Experiments
 
-Pre-registered arms live in `experiments/*.env`; every write-up follows question -> hypothesis ->
-setup -> results -> learnings:
+Experiment configurations live in `experiments/*.env`; every write-up follows question -> hypothesis ->
+setup -> results -> learnings. This organization does not establish preregistration: some
+configurations were committed after their runs, and recorded commit IDs do not always identify
+the complete executed source. These analyses are retrospective.
 
 - exp00 - throughput benchmark: batched env on CUDA, 4096 envs; minibatch 8192 gives 31k fps
   (33k at 16384; 8192 adopted for more gradient steps per rollout).
@@ -114,24 +140,30 @@ setup -> results -> learnings:
   archived, see exp01) and was replaced by the cycle-minus-corner construction.
 - exp02 - 2^4: plain PPO 0.877 (5M) and 0.933 (20M) deterministic completion; loosely gated
   Backplay (rho 0.2) 0.850; strictly gated Backplay (rho 0.9, window 4) 0.963 at 5M with 43.5
-  steps per completion (`reports/data/exp02*_best/summary.json`). Failures are collisions with
-  one cell left. The strict gate became the default.
+  steps per completion (`reports/data/exp02*_best/summary.json`). The strict checkpoint's failed
+  episodes included endings with one cell left. Relative to the loose arm, the strict arm changed gate
+  threshold, window width and minimum episode count together, so the score difference cannot be
+  attributed to the threshold alone. Its settings became the defaults.
 - exp03 - 3^4 (81 cells, odd): plain PPO, strict Backplay (gate 0.9) and relaxed Backplay (gate
   0.8) at 30M steps each all end at 0.54-0.57 fill and 0 completions; the curriculum frontier never
-  left the endgame (80 -> 76-78) because the corner detour was never mastered above the gate
+  left the endgame (80 -> 76-78); these records do not isolate failure to learn the corner detour
   (`reports/experiments/exp03_ppo_3x4.md`).
 - exp04 - 4^4 (256 cells): Backplay (gate 0.8, window 16, step 8) for 100M steps / 54 min:
   seven frontier advances (255 -> 199) between 18.6M and 53.7M steps, none in the remaining
-  46M, and the curriculum success rate fell to 0 from about 73M steps as the learning rate and
+  46M, and the logged curriculum success rate fell below 0.001 from about 73M steps and to exactly
+  zero from about 77M steps as the learning rate and
   clip range decayed towards their end values; true-start fill 0.40 (best episode
   0.66), completion 0.000 (`reports/experiments/exp04_ppo_4x4.md`, `reports/data/exp04_ppo_4x4*/`).
-- exp05 - 4^4 imitation warm start: behaviour cloning of the route follower reaches 1.000
-  expert-action accuracy and the cloned network completes the board in 1.000 +- 0.000 of
+- exp05 - 4^4 imitation warm start: behaviour cloning of the route follower records 1.000
+  expert-action accuracy on training minibatches, without a held-out accuracy measurement, and
+  the cloned network completes the board in 1.000 +- 0.000 of
   deterministic episodes (0.787 +- 0.041 when sampling), 16,448 steps per game. exp05b fine-tuned
-  it with PPO for 20M steps (lr 1e-4, clip 0.1, no entropy, no curriculum): completion stayed at
-  1.00 in all nine evaluations but the step count did not move and `approx_kl` stayed below
-  2e-5 throughout - a clone whose expert-move probability is about 0.9998 (from the final
-  cloning loss) gives PPO nothing to compare, so fine-tuning needs deliberate exploration
+  it with PPO for 20M steps (lr 1e-4, clip 0.1, entropy coefficient 0, no curriculum): completion stayed at
+  1.00 in all nine in-training evaluations, and the selected checkpoint's completion-step mean
+  remained close to the clone's. `approx_kl` stayed below 2e-5 but was nonzero, as was policy
+  entropy: this does not establish an unchanged policy or identical sampled and argmax actions.
+  The run completed only one training episode, a failure, limiting evidence about learning from
+  successful full trajectories. No efficiency improvement or causal explanation was established
   (`reports/experiments/exp05_bc_4x4.md`, `reports/data/exp05*`).
 
 The generated cross-run table is `reports/all_experiments.md`; `reports/networks.md` puts every
@@ -140,43 +172,52 @@ steps per food against a geometric floor).
 
 ## 6. Discussion
 
-On the 16-cell board, masking plus a strictly gated reverse curriculum is what turns "eats a lot"
-into "fills the board": the loose gate advanced the frontier before endgames were mastered and
-was indistinguishable from no curriculum, while the strict gate gave the best policy at the same
-budget. The remaining failures there are endgame traps (boxed in with one free cell), a
-global-planning constraint that a one-hot MLP learns only partially from terminal rewards.
+On the 16-cell board, the checkpoint labelled strict Backplay had the highest observed completion
+among the tested from-scratch checkpoints. This is a descriptive ranking: one training seed per
+arm, multiple simultaneous curriculum changes and contaminated stage gates prevent an
+algorithm-level or threshold-specific conclusion. Some of the strict checkpoint's failures
+ended with one free cell, but that outcome alone does not identify its internal planning mechanism.
 
-On 81 and 256 cells the same recipe fails, for two identifiable reasons. First, the curriculum's
-starting states - snakes laid along the Hamiltonian cycle - are not states the true-start policy
-ever reaches (cf. Florensa et al. 2017, who adapt the start distribution to the agent's
-performance), so skill on curriculum starts (0.88-0.99 fill; 60-84 % success at each gate
-crossing before the collapse) did not transfer to the true start (0.4-0.55 fill). Second, the
-learning-rate and clip-range schedules decay with the total budget, not with curriculum progress
-(the entropy coefficient is constant), so the 4^4 agent lost the ability to
-adapt exactly when the frontier reached the hardest states and its endgame success fell to zero.
-The odd 3^4 board adds the parity constraint and a two-step corner detour that was never learned.
+On 81 and 256 cells the evaluated from-scratch checkpoints recorded no completions. Possible
+explanations include limited transfer between curriculum and true-start distributions and
+learning-rate/clip-range decay tied to the total budget. Neither was isolated by an ablation;
+low true-start performance does not prove that curriculum states are unreachable. The curriculum
+defect is a further explanation: stage advances can be supported by results from older, easier
+stages. No causal decomposition is possible from these runs. The odd board has a parity
+constraint and the scripted baseline uses a corner detour, but the learned policies' failure
+mechanism is not established.
 
-The imitation warm start (exp05) closes the feasibility gap: the route follower supplies
-unlimited (observation, action) pairs on every board, the states cover every fill level at once,
-and the resulting network completes the 256-cell board in every deterministic episode. What
-remains for RL is efficiency - the clone plays the 16,448-step cycle, while the learned 2^4 agent
-showed that PPO can cut a third of the steps by taking shortcuts - and robustness under sampling.
-Other candidates for the from-scratch setting are schedules driven by the frontier rather than
-the step count, longer budgets with smaller frontier steps, and decision-time search with the
-learned value function (AlphaZero-style policy iteration, Silver et al. 2017), as in AlphaSnake.
+The imitation checkpoint demonstrates neural-policy completion in the archived deterministic
+4^4 evaluation. Its training accuracy measures fit to expert minibatches; matching the follower's
+completion score and mean duration does not establish a head-only internal rule or equivalence
+on every state. Sampling produced failures, and the PPO fine-tune provides little evidence about
+successful full-trajectory learning. Efficiency and sampling robustness remain research targets.
+Frontier-driven schedules, more complete training trajectories, and decision-time search are
+candidates for future controlled experiments, not validated remedies.
+
+The [audit](scientific_audit.md) and [evaluation protocol](../docs/evaluation.md) give the complete
+limitations: conditional fixed-checkpoint uncertainty, incomplete historical source provenance,
+retrospective hypotheses and missing independent training replications. No demonstrated direct
+train/test trajectory leakage was found; this does not establish the absence of all selection bias.
+Historical timeout-target aliasing affected some runs, but the archived 4^4 curriculum run had no
+timeouts and that defect cannot explain its collapse. The measured scores remain descriptive
+evidence; neither statistical significance nor causal identification can be supplied by editing
+the reports.
 
 ## 7. Conclusion
 
-The repository delivers a playable 4D snake, a batched training stack that runs 33k PPO steps per
-second on one laptop GPU, scripted proofs that every board size is completable (with a new
-cycle-minus-corner construction for odd sizes), a reproducible experiment loop, and two results:
-model-free MaskablePPO with a Hamiltonian reverse curriculum completes the 16-cell 4D board in
-96 % of episodes but not 3^4 or 4^4 within 30M and 100M steps; a neural network behaviour-cloned
-from the Hamiltonian follower completes the full 4^4 board in 100 % of deterministic episodes,
-and PPO fine-tuning from that clone is the path to a faster learned completer.
+The repository delivers a playable 4D snake, a batched training stack measured at 33k PPO steps per
+second on one laptop GPU, scripted route baselines and archived experiment artifacts. The selected
+strict-curriculum MaskablePPO checkpoint completed the 16-cell board in 96 % of its evaluation
+episodes; the evaluated from-scratch checkpoints recorded no 3^4 or 4^4 completions within the
+30M- and 100M-step budgets. The behaviour-cloned 4^4 checkpoint completed 100 % of its archived
+deterministic episodes. These observations survive arithmetic verification, while stage-mastery,
+algorithm superiority and causal mechanism claims do not. Whether PPO can make the clone more
+efficient remains unresolved.
 
 ## References
 
+- Patterson, A., Neumann, S., White, M. and White, A. (2024). Empirical Design in Reinforcement Learning. JMLR 25(318), 1-63. https://jmlr.org/papers/v25/23-0183.html
 - Huang, S. and Ontanon, S. (2020). A Closer Look at Invalid Action Masking in Policy Gradient Algorithms. arXiv:2006.14171.
 - Resnick, C. et al. (2018). Backplay: "Man muss immer umkehren". arXiv:1807.06919.
 - Salimans, T. and Chen, R. (2018). Learning Montezuma's Revenge from a Single Demonstration. arXiv:1812.03381.
