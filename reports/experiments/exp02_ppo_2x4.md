@@ -77,7 +77,8 @@ Figures: `reports/figures/exp02*_curves.png` (fill, eval success, frontier, epis
 
 ## Decisions
 
-- Curriculum defaults switched to the strict gate for exp03b (3^4) and exp04 (4^4).
+- Curriculum defaults switched to the strict gate, used by exp03b (3^4); exp04 (4^4) overrode it
+  with `rho=0.8`, window 16 and frontier step 8 (`reports/data/exp04_ppo_4x4/config.json`).
 - Open hypotheses carried forward: closing the last few percent on tiny boards might involve
   longer training with the strict gate, a lower final entropy, or an endgame-aware feature
   (reachability of the free region); tested next on the harder boards first.
