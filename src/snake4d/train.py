@@ -10,8 +10,9 @@ Local notes:
 * Linear decay of both the learning rate and the clip range (the reference snake agent
   linyiLYi/snake-ai decays both) via SB3's own ``LinearSchedule(start, end, end_fraction=1.0)``:
   https://stable-baselines3.readthedocs.io/en/master/common/utils.html
-* ``torch.set_num_threads``: SB3 maintainers report large CPU speed-ups with one thread for small
-  MLPs (https://github.com/DLR-RM/stable-baselines3/issues/121); this repo measured the opposite
+* ``torch.set_num_threads``: an SB3 maintainer reports ~5x CPU speed-ups in some cases from one
+  thread (``OMP_NUM_THREADS=1``) for small MLPs
+  (https://github.com/DLR-RM/stable-baselines3/issues/121); this repo measured the opposite
   for its 1026->512->512 policy (8 threads beat 1 on every CPU row of docs/benchmark.md), hence
   ``torch_threads = 8`` by default.
 * Logger ``configure(run_dir, ["stdout", "log", "csv", "tensorboard"])`` writes the console
