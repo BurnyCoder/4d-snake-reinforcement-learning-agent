@@ -71,7 +71,7 @@ class SnakeBatch:
         rows = self.rows if rows is None else np.asarray(rows)
         self.age[rows] = 0
         lengths = np.ones(len(rows), dtype=np.int32)
-        if self.cur_hi > 1:  # curriculum: most resets begin as a prefix of the demonstration
+        if self.cur_hi > 1:  # curriculum: most resets begin as a segment of the demonstration
             from_route = self.rng.random(len(rows)) >= self.p_true_start
             lo = max(1, self.cur_hi - self.cur_window)
             lengths[from_route] = self.rng.integers(lo, self.cur_hi + 1, size=int(from_route.sum()))

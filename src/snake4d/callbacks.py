@@ -12,7 +12,7 @@ Local notes:
   ``_on_rollout_end`` runs before SB3 dumps the iteration's logs, ``self.training_env`` is the
   VecEnv being trained on.
 * Backplay (Resnick et al., https://arxiv.org/abs/1807.06919): start episodes near the end of a
-  demonstration (here: as a prefix of the Hamiltonian route) and move the start backwards.
+  demonstration (here: as a segment of the Hamiltonian route at a random rotation) and move the start backwards.
   Success-gated advance as in Salimans & Chen (https://arxiv.org/abs/1812.03381): move the reset
   point back when the success rate of curriculum episodes exceeds ``rho``.
 """
