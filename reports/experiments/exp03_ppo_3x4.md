@@ -47,8 +47,9 @@ Figures: `reports/figures/exp03*_curves.png`, `exp03*_fill_hist.png`.
 - H2 was not met in these runs: the curriculum never left the endgame. Starting as a 71-79-cell cycle segment
   (the frontier is clamped to `route_len - 1 = 79`; the callback logged 80 before the read-back
   fix; window 4 for exp03b, 8 for exp03c),
-  the logged curriculum success was 60-85 % and triggered the 90 % gate only twice
-  (frontier 80 -> 78, then a plateau around 0.83); relaxing the gate to 80 % with larger steps
+  the curriculum-episode success averaged 78 % (exp03b) and 60 % (exp03c) (`episodes.json`;
+  logged per-rollout values 0.22-0.91 and 0.14-0.80, `progress.csv`) and triggered the 90 % gate
+  only twice (frontier 80 -> 78, then a plateau around 0.83); relaxing the gate to 80 % with larger steps
   moved the frontier only to 76 and lowered the curriculum success to 60 %.
   Gate samples mixed episode starts from different frontiers; these crossings therefore do not
   demonstrate mastery of the stated frontier. The scripted route needs a timed corner detour,
