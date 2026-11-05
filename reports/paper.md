@@ -27,8 +27,8 @@ parameters, and there are no independent training replications. On the larger bo
 evaluated checkpoints recorded no completions within our budgets: on 3^4 (odd parity) all arms
 scored 54-57 % fill, and on 4^4 a 100M-step curriculum run moved the start frontier
 from 255 to 199 cells before its curriculum success collapsed; its selected checkpoint reached
-40 % fill from the true start (best episode
-66 %) and zero completions. Schedule decay and transfer from curriculum starts are hypotheses,
+40 % fill from the true start (best true-start training episode
+66 %, `episodes.json`) and zero completions. Schedule decay and transfer from curriculum starts are hypotheses,
 not isolated causes of collapse; gate contamination is an additional confound.
 Behaviour-cloning the same network on 262k route-follower decisions spread over all fill levels
 (about twelve seconds of supervised training) yields a neural policy that completes the full 4^4 board in
@@ -48,7 +48,8 @@ batched training, evaluation protocol and reports.
 
 ## 2. Related work
 
-- **Masked PPO for snake.** linyiLYi/snake-ai fills a 12x12 board with MaskablePPO, a body
+- **Masked PPO for snake.** linyiLYi/snake-ai trains MaskablePPO on a 12x12 board (its default
+  `board_size`; its README does not report board completion), with a body
   gradient in the observation, and decaying learning rate and clip range; we adopt the masking,
   the body-age channel and the schedules, but not its distance-based progress bonus.
 - **Invalid-action masking.** Huang and Ontanon (2020) justify masking theoretically and show its
@@ -69,8 +70,8 @@ batched training, evaluation protocol and reports.
   observation; its covariate-shift failure mode and the DAgger remedy are due to Ross, Gordon
   and Bagnell (2011).
 - **AlphaSnake** (Du et al. 2022) is, by its authors' account, the first published learned agent
-  with a >50 % win rate on a 10x10 board, using MCTS; it uses the Hamiltonian-cycle strategy as
-  its scripted baseline, as we do.
+  with a >50 % win rate on a 10x10 board, using MCTS; its Table 1 compares it with a
+  Hamiltonian-cycle strategy among other baselines, which we also use as a scripted baseline.
 - **Shaping.** Ng, Harada and Russell (1999) give policy-invariance conditions for potential-based
   reward shaping; episodic boundary conditions also matter (Grzes 2017). Shaping is available
   but off in the recorded experiments.
@@ -152,8 +153,8 @@ the complete executed source. These analyses are retrospective.
   seven frontier advances (255 -> 199) between 18.6M and 53.7M steps, none in the remaining
   46M, and the logged curriculum success rate fell below 0.001 from about 73M steps and to exactly
   zero from about 77M steps as the learning rate and
-  clip range decayed towards their end values; true-start fill 0.40 (best episode
-  0.66), completion 0.000 (`reports/experiments/exp04_ppo_4x4.md`, `reports/data/exp04_ppo_4x4*/`).
+  clip range decayed towards their end values; true-start fill 0.40 (best true-start training
+  episode 0.66), completion 0.000 (`reports/experiments/exp04_ppo_4x4.md`, `reports/data/exp04_ppo_4x4*/`).
 - exp05 - 4^4 imitation warm start: behaviour cloning of the route follower records 1.000
   expert-action accuracy on training minibatches, without a held-out accuracy measurement, and
   the cloned network completes the board in 1.000 +- 0.000 of
