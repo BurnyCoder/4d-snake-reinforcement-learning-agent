@@ -44,7 +44,7 @@ Figures: `reports/figures/exp03*_curves.png`, `exp03*_fill_hist.png`.
   completion. Episodes end by collision at fill ~0.5-0.6, long
   before the starvation cap. This does not isolate parity as the cause or establish a zero
   population completion probability ([uncertainty](../../docs/evaluation.md)).
-- H2 was not met in these runs: the curriculum never left the endgame. Starting as a 71-79-cell cycle segment
+- H2 was not met in these runs: the curriculum never left the endgame. Starting as a 68-79-cell cycle segment
   (the frontier is clamped to `route_len - 1 = 79`; the callback logged 80 before the read-back
   fix; window 4 for exp03b, 8 for exp03c),
   the curriculum-episode success averaged 78 % (exp03b) and 60 % (exp03c) (`episodes.json`;
@@ -54,7 +54,7 @@ Figures: `reports/figures/exp03*_curves.png`, `exp03*_fill_hist.png`.
   Gate samples mixed episode starts from different frontiers; these crossings therefore do not
   demonstrate mastery of the stated frontier. The scripted route needs a timed corner detour,
   but no policy intervention here identifies failure to learn that detour as the cause.
-- The observed true-start training fill is similar across the arms (0.53-0.55), but this does
+- The observed true-start training fill is similar across the arms (0.53-0.54), but this does
   not establish an absence of transfer. The configured 20 % is a probability per reset, not a
   fraction of transitions: true-start episodes account for **53.93 %** of completed-episode
   transitions in exp03b and **52.15 %** in exp03c, because their durations differ. These shares
