@@ -9,7 +9,7 @@ of invalid actions. The mask comes from the environment (`action_masks()`), so t
 learns *which legal move leads to a full board*.
 
 PPO is on-policy and pairs naturally with thousands of batched environments; the reference agent
-that fills a 12x12 board (linyiLYi/snake-ai) is also MaskablePPO.
+for a 12x12 board (linyiLYi/snake-ai, default `board_size=12`) is also MaskablePPO.
 
 ## Network: MLP on the flat observation
 
